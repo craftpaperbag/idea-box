@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>室温ジャッジ</title>
+<style>
+  :root{
+    --bg:#f5f6f7;
+    --card:#ffffff;
+    --ink:#23262b;
+    --sub:#80868f;
+    --line:#e6e8ec;
+    --cold:#3f7fd6;
+    --cold-soft:#e6effb;
+    --hot:#d65a3f;
+    --hot-soft:#fbe9e3;
+    --ok:#4f9e72;
+    --ok-soft:#e6f3ec;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.06);
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(40px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    transition:background .4s ease;
+  }
+  body[data-mood="cold"]{background:linear-gradient(180deg,#eaf2fc 0%,#f5f6f7 220px)}
+  body[data-mood="hot"]{background:linear-gradient(180deg,#fdeee8 0%,#f5f6f7 220px)}
+  body[data-mood="ok"]{background:linear-gradient(180deg,#e9f5ee 0%,#f5f6f7 220px)}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 16px 0}
+  header{margin:4px 2px 18px}
+  h1{font-size:21px;margin:0;letter-spacing:.02em}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:5px}
+
+  /* verdict */
+  .verdict{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:20px 18px 18px;text-align:center;margin-bottom:16px;
+  }
+  .face{font-size:54px;line-height:1;margin-bottom:6px;transition:transform .25s}
+  .vlabel{font-size:24px;font-weight:800;letter-spacing:.02em;margin:2px 0 2px}
+  .vlabel.cold{color:var(--cold)}
+  .vlabel.hot{color:var(--hot)}
+  .vlabel.ok{color:var(--ok)}
+  .vlabel.none{color:var(--sub);font-weight:700;font-size:19px}
+  .vest{font-size:13px;color:var(--sub);min-height:20px}
+  .vest b{color:var(--ink);font-weight:700}
+
+  /* meter */
+  .meter{margin:16px 4px 4px}
+  .track{position:relative;height:12px;border-radius:999px;
+    background:linear-gradient(90deg,var(--cold) 0%,#cdd6df 50%,var(--hot) 100%);}
+  .needle{position:absolute;top:50%;left:50%;width:20px;height:20px;border-radius:50%;
+    background:#fff;border:3px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.18);
+    transform:translate(-50%,-50%);transition:left .35s cubic-bezier(.2,.7,.2,1);}
+  .scale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--sub);margin-top:8px;font-weight:600}
+
+  /* advice */
+  .advice{display:none;margin-top:14px;border-radius:14px;padding:12px 14px;text-align:left;font-size:14px}
+  .advice.show{display:block}
+  .advice.cold{background:var(--cold-soft);color:#2c5fa3}
+  .advice.hot{background:var(--hot-soft);color:#a8442d}
+  .advice.ok{background:var(--ok-soft);color:#36795a}
+  .advice b{font-weight:800}
+
+  /* signal groups */
+  .group{margin-bottom:14px}
+  .ghead{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--sub);margin:0 4px 9px}
+  .ghead .dot{width:9px;height:9px;border-radius:50%}
+  .ghead.cold .dot{background:var(--cold)}
+  .ghead.hot .dot{background:var(--hot)}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{
+    border:1.5px solid var(--line);background:var(--card);font:inherit;font-size:14px;font-weight:600;
+    padding:11px 15px;border-radius:999px;cursor:pointer;color:var(--ink);
+    transition:transform .1s, background .15s, border-color .15s, color .15s;
+    box-shadow:0 1px 1px rgba(0,0,0,.02);
+  }
+  .chip:active{transform:scale(.94)}
+  .chip.on.cold{background:var(--cold);border-color:var(--cold);color:#fff}
+  .chip.on.hot{background:var(--hot);border-color:var(--hot);color:#fff}
+
+  .actions{display:flex;gap:10px;margin:6px 0 22px}
+  .btn{flex:1;border:0;font:inherit;font-weight:700;font-size:14.5px;padding:13px 0;border-radius:13px;cursor:pointer;transition:transform .1s,opacity .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--ink);color:#fff}
+  .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--sub);flex:0 0 auto;padding:13px 18px}
+  .btn:disabled{opacity:.4;pointer-events:none}
+
+  /* history */
+  .hsec h2{font-size:13px;color:var(--sub);margin:0 4px 10px;font-weight:700;letter-spacing:.02em}
+  .hlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .hitem{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:10px 13px;box-shadow:0 1px 1px rgba(0,0,0,.02)}
+  .hitem .he{font-size:21px}
+  .hitem .ht{flex:1;font-size:14px;font-weight:700}
+  .hitem .ht span{display:block;font-size:11.5px;color:var(--sub);font-weight:500}
+  .hitem .hx{border:0;background:transparent;color:var(--line);font-size:20px;cursor:pointer;padding:2px 4px;line-height:1}
+  .hitem .hx:active{color:var(--sub)}
+  .empty{color:var(--sub);font-size:13px;text-align:center;padding:18px 0;background:var(--card);border:1px dashed var(--line);border-radius:13px}
+
+  footer{text-align:center;color:var(--sub);font-size:11.5px;margin:26px 0 6px}
+  footer a{color:var(--sub)}
+</style>
+</head>
+<body data-mood="none">
+  <div class="wrap">
+    <header>
+      <h1>室温ジャッジ 🌡️</h1>
+      <div class="tag">今の体の感覚をぽちぽちタップ → 寒い・暑いを判定します</div>
+    </header>
+
+    <section class="verdict">
+      <div class="face" id="face">🤔</div>
+      <div class="vlabel none" id="vlabel">タップして判定</div>
+      <div class="vest" id="vest">下のボタンから、当てはまる感覚を選んでね</div>
+
+      <div class="meter">
+        <div class="track"><div class="needle" id="needle" style="left:50%"></div></div>
+        <div class="scale"><span>❄️ 寒い</span><span>ちょうどいい</span><span>暑い 🔥</span></div>
+      </div>
+
+      <div class="advice" id="advice"></div>
+    </section>
+
+    <div class="group">
+      <div class="ghead cold"><span class="dot"></span>寒いサイン</div>
+      <div class="chips" id="coldChips"></div>
+    </div>
+
+    <div class="group">
+      <div class="ghead hot"><span class="dot"></span>暑いサイン</div>
+      <div class="chips" id="hotChips"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="saveBtn" disabled>この判定を記録</button>
+      <button class="btn ghost" id="resetBtn">リセット</button>
+    </div>
+
+    <section class="hsec">
+      <h2>判定の履歴</h2>
+      <ul class="hlist" id="hlist"></ul>
+    </section>
+
+    <footer>すべてこの端末内に保存されます（外部送信なし）</footer>
+  </div>
+
+<script>
+(function(){
+  const COLD = [
+    {k:'hands', t:'手先・足先が冷たい', w:2},
+    {k:'huddle', t:'肩がこわばる・縮こまる', w:2},
+    {k:'goose', t:'鳥肌・ぶるっとする', w:3},
+    {k:'layer', t:'何か羽織りたい', w:2},
+    {k:'nose', t:'鼻先が冷たい', w:1},
+  ];
+  const HOT = [
+    {k:'sweat', t:'汗ばむ・じっとり', w:3},
+    {k:'flush', t:'顔がほてる', w:2},
+    {k:'strip', t:'何か脱ぎたい', w:2},
+    {k:'thirst', t:'やたら喉が渇く', w:1},
+    {k:'dull', t:'だるい・ぼーっとする', w:1},
+  ];
+  const HKEY = 'roomTempJudge.history.v1';
+
+  const state = {}; // key -> true
+  const els = {
+    coldChips: document.getElementById('coldChips'),
+    hotChips: document.getElementById('hotChips'),
+    face: document.getElementById('face'),
+    vlabel: document.getElementById('vlabel'),
+    vest: document.getElementById('vest'),
+    needle: document.getElementById('needle'),
+    advice: document.getElementById('advice'),
+    saveBtn: document.getElementById('saveBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    hlist: document.getElementById('hlist'),
+    body: document.body,
+  };
+
+  function buildChips(list, host, kind){
+    list.forEach(item=>{
+      const b = document.createElement('button');
+      b.className = 'chip ' + kind;
+      b.textContent = item.t;
+      b.addEventListener('click', ()=>{
+        state[item.k] = !state[item.k];
+        b.classList.toggle('on', !!state[item.k]);
+        evaluate();
+      });
+      host.appendChild(b);
+    });
+  }
+  buildChips(COLD, els.coldChips, 'cold');
+  buildChips(HOT, els.hotChips, 'hot');
+
+  function score(){
+    let s = 0, n = 0;
+    COLD.forEach(i=>{ if(state[i.k]){ s -= i.w; n++; } });
+    HOT.forEach(i=>{ if(state[i.k]){ s += i.w; n++; } });
+    return {s, n};
+  }
+
+  // verdict from score -> one of cold/ok/hot (+strength)
+  function verdictOf(s){
+    if(s <= -2) return 'cold';
+    if(s >= 2)  return 'hot';
+    return 'ok';
+  }
+
+  const FACE = {cold:'🥶', ok:'😌', hot:'🥵', none:'🤔'};
+  const LABEL = {cold:'寒いっぽい', ok:'ちょうどいい', hot:'暑いっぽい'};
+
+  function adviceFor(v, s){
+    if(v==='cold'){
+      const strong = s <= -5;
+      return ['cold', strong
+        ? '<b>けっこう冷えてます。</b>もう1枚羽織る／暖房を +1〜2℃、足元から温めると効きます。'
+        : '<b>少しひんやり。</b>薄手を1枚羽織るか、温かい飲み物がちょうど良さそう。'];
+    }
+    if(v==='hot'){
+      const strong = s >= 5;
+      return ['hot', strong
+        ? '<b>かなり暑いです。</b>1枚脱ぐ／風を通す・冷房を入れて、水分も忘れずに。'
+        : '<b>少し暑め。</b>1枚脱ぐか、窓を開けて風を通すと楽になりそう。'];
+    }
+    return ['ok', '<b>快適ゾーンです。</b>今の服装・室温をキープでOK。'];
+  }
+
+  function evaluate(){
+    const {s, n} = score();
+    if(n === 0){
+      els.face.textContent = FACE.none;
+      els.vlabel.textContent = 'タップして判定';
+      els.vlabel.className = 'vlabel none';
+      els.vest.innerHTML = '下のボタンから、当てはまる感覚を選んでね';
+      els.needle.style.left = '50%';
+      els.advice.className = 'advice';
+      els.saveBtn.disabled = true;
+      els.body.dataset.mood = 'none';
+      return;
+    }
+    const v = verdictOf(s);
+    els.face.textContent = FACE[v];
+    els.face.style.transform = 'scale(1.12)';
+    setTimeout(()=>els.face.style.transform='scale(1)', 150);
+    els.vlabel.textContent = LABEL[v];
+    els.vlabel.className = 'vlabel ' + v;
+    els.vest.innerHTML = '選んだサイン <b>' + n + '個</b>から判定';
+
+    // needle position: clamp score roughly to -8..8 -> 8%..92%
+    const clamped = Math.max(-8, Math.min(8, s));
+    const pct = 50 + (clamped/8)*42;
+    els.needle.style.left = pct + '%';
+
+    const [cls, text] = adviceFor(v, s);
+    els.advice.className = 'advice show ' + cls;
+    els.advice.innerHTML = text;
+    els.saveBtn.disabled = false;
+    els.body.dataset.mood = v;
+  }
+
+  // ---- history ----
+  function loadHistory(){
+    try{ return JSON.parse(localStorage.getItem(HKEY)) || []; }catch(e){ return []; }
+  }
+  function saveHistory(arr){
+    localStorage.setItem(HKEY, JSON.stringify(arr.slice(0,30)));
+  }
+  function fmtTime(ts){
+    const d = new Date(ts);
+    const now = new Date();
+    const same = d.toDateString() === now.toDateString();
+    const hm = d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    if(same) return '今日 ' + hm;
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' + hm;
+  }
+  function renderHistory(){
+    const arr = loadHistory();
+    els.hlist.innerHTML = '';
+    if(arr.length === 0){
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'まだ記録はありません。判定したら「記録」で残せます。';
+      els.hlist.appendChild(li);
+      return;
+    }
+    arr.forEach((rec, idx)=>{
+      const li = document.createElement('li');
+      li.className = 'hitem';
+      li.innerHTML =
+        '<span class="he">'+FACE[rec.v]+'</span>'+
+        '<span class="ht">'+LABEL[rec.v]+'<span>'+fmtTime(rec.ts)+' ・ サイン'+rec.n+'個</span></span>'+
+        '<button class="hx" aria-label="削除">×</button>';
+      li.querySelector('.hx').addEventListener('click', ()=>{
+        const a = loadHistory(); a.splice(idx,1); saveHistory(a); renderHistory();
+      });
+      els.hlist.appendChild(li);
+    });
+  }
+
+  els.saveBtn.addEventListener('click', ()=>{
+    const {s, n} = score();
+    if(n === 0) return;
+    const arr = loadHistory();
+    arr.unshift({ts: Date.now(), v: verdictOf(s), s, n});
+    saveHistory(arr);
+    renderHistory();
+    els.saveBtn.textContent = '記録しました ✓';
+    setTimeout(()=>els.saveBtn.textContent='この判定を記録', 1200);
+  });
+
+  els.resetBtn.addEventListener('click', ()=>{
+    Object.keys(state).forEach(k=>delete state[k]);
+    document.querySelectorAll('.chip.on').forEach(c=>c.classList.remove('on'));
+    evaluate();
+  });
+
+  evaluate();
+  renderHistory();
+})();
+</script>
+</body>
+</html>

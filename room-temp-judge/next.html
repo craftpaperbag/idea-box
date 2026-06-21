@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>室温ジャッジ — 次の実装項目</title>
+<style>
+  :root{
+    --bg:#f5f6f7;--card:#fff;--ink:#23262b;--sub:#80868f;--line:#e6e8ec;
+    --cold:#3f7fd6;--hot:#d65a3f;--shadow:0 1px 2px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;margin:0;padding:24px 16px 60px}
+  .wrap{max-width:620px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .tag{color:var(--sub);font-size:13px;margin-bottom:22px}
+  .back{display:inline-block;margin-bottom:18px;color:var(--cold);text-decoration:none;font-size:13.5px;font-weight:600}
+  ol{list-style:none;counter-reset:n;margin:0;padding:0}
+  li{counter-increment:n;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:16px 18px 16px 56px;position:relative;margin-bottom:14px}
+  li::before{content:counter(n);position:absolute;left:16px;top:16px;width:28px;height:28px;
+    background:var(--ink);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px}
+  .pri{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;
+    border-radius:999px;margin-bottom:7px}
+  .p-high{background:#fbe9e3;color:#a8442d}
+  .p-mid{background:#e6effb;color:#2c5fa3}
+  .p-low{background:#eef0f3;color:#6b7280}
+  h3{margin:0 0 5px;font-size:16px}
+  .why{font-size:13.5px;color:var(--sub);margin:0}
+  .why b{color:var(--ink)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="./index.html">← 室温ジャッジに戻る</a>
+    <h1>次の実装項目</h1>
+    <div class="tag">優先度つき。「なぜ次か」を一行添えています。</div>
+
+    <ol>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>判定の精度を上げる「重み」の見直し＆季節・時間帯の文脈</h3>
+        <p class="why"><b>なぜ次か：</b>今は固定スコアだけ。朝晩や季節で同じサインでも意味が変わるので、文脈を足すと判定の納得感が一段上がる（このアプリの核心）。</p>
+      </li>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>推定室温（◯〜◯℃の目安）の表示</h3>
+        <p class="why"><b>なぜ次か：</b>「寒い/暑い」だけでなく数字の目安が出ると行動（暖房を何℃に）に直結する。ユーザーが一番ほしくなる次の情報。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>履歴のグラフ化（時間帯ごとの寒暖の傾向）</h3>
+        <p class="why"><b>なぜ次か：</b>記録が貯まると「夕方いつも寒い」等のパターンが見える。一覧より気づきが得られ、継続利用の動機になる。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>サイン項目のカスタマイズ（自分の言葉で追加・編集）</h3>
+        <p class="why"><b>なぜ次か：</b>体感の表現は人それぞれ。自分のサインを足せると当てはまりやすくなり、判定の精度と愛着が上がる。</p>
+      </li>
+      <li>
+        <span class="pri p-low">優先度 低</span>
+        <h3>端末の気温API/位置情報で外気温を参考表示</h3>
+        <p class="why"><b>なぜ次か：</b>外気との差が分かると体感の理由づけになるが、許可や通信が絡みMVPの「タップだけで完結」を崩しうるので最後。</p>
+      </li>
+    </ol>
+  </div>
+</body>
+</html>
