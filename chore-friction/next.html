@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>次の実装項目 — 家事ひっかかりログ</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:#f6f5f2;color:#2b2a27;line-height:1.7;margin:0;padding:28px 18px 60px}
+  .wrap{max-width:620px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .sub{color:#7c7a73;font-size:13.5px;margin-bottom:26px}
+  .item{background:#fff;border:1px solid #e7e4dd;border-radius:14px;padding:16px 18px;margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 22px rgba(0,0,0,.04)}
+  .head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .pri{font-size:11px;font-weight:800;color:#fff;background:#c2683a;border-radius:999px;padding:3px 10px}
+  .pri.p2{background:#9a7b53}.pri.p3{background:#9b9890}
+  .ttl{font-size:16px;font-weight:700}
+  .why{font-size:13.5px;color:#5f5d57}
+  .why b{color:#c2683a}
+  footer{color:#9b9890;font-size:12px;text-align:center;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>次の実装項目</h1>
+  <div class="sub">家事ひっかかりログ / 優先度つき。なぜ次か、を一行で。</div>
+
+  <div class="item">
+    <div class="head"><span class="pri">優先1</span><span class="ttl">「で、どうする？」改善メモ欄</span></div>
+    <div class="why"><b>なぜ次か：</b>ひっかかりを見える化した次の一歩は「対策」。気づきタブのトップ家事に、思いついた解決アイデアを紐づけて残せると、可視化が行動に変わる。</div>
+  </div>
+
+  <div class="item">
+    <div class="head"><span class="pri">優先2</span><span class="ttl">曜日・時間帯のパターン表示</span></div>
+    <div class="why"><b>なぜ次か：</b>「いつ」ムダが起きるかが分かると対策が具体化する。月曜の朝に集中、などの偏りはすでに記録しているtsから無料で出せる。</div>
+  </div>
+
+  <div class="item">
+    <div class="head"><span class="pri p2">優先3</span><span class="ttl">データの書き出し / 読み込み（JSON）</span></div>
+    <div class="why"><b>なぜ次か：</b>毎日ためる前提なので、localStorage消失や機種変でデータが飛ぶのが一番の離脱要因。バックアップ手段を早めに。</div>
+  </div>
+
+  <div class="item">
+    <div class="head"><span class="pri p2">優先4</span><span class="ttl">週次ふりかえりカード</span></div>
+    <div class="why"><b>なぜ次か：</b>「だんだん見えてくる」を実感させるトリガー。1週間ぶんを1枚に要約して見せると、続ける動機になる。</div>
+  </div>
+
+  <div class="item">
+    <div class="head"><span class="pri p3">優先5</span><span class="ttl">カテゴリのカスタム追加</span></div>
+    <div class="why"><b>なぜ次か：</b>家庭ごとに家事の単位は違う（ペット・庭・送り迎え等）。固定8カテゴリだと取りこぼす。ただし基本フローが固まってからでよい。</div>
+  </div>
+
+  <footer>idea-box · chore-friction</footer>
+</div>
+</body>
+</html>
