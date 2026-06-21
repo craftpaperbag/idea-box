@@ -6,7 +6,7 @@
 
 | アイデア名 | 一行説明 | アプリ | 次の項目 |
 |---|---|---|---|
-| 家事ひっかかりログ | 家事の「めんどい」を毎日一言ためて、どこにムダがあるか可視化する | [開く](https://craftpaperbag.github.io/idea-box/chore-friction/index.html) | [next](https://craftpaperbag.github.io/idea-box/chore-friction/next.html) |
+| 家事ひっかかりログ | 家事の「めんどい」を毎日一言ためて、どこにムダがあるか可視化する | <a href="https://craftpaperbag.github.io/idea-box/chore-friction/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/chore-friction/next.html" target="_blank" rel="noopener">next</a> |
 
 ## License
 
