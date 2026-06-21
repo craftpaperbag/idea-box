@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ねむりスイッチ</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --bg2:#131a31;
+    --card:rgba(255,255,255,.05);
+    --line:rgba(255,255,255,.10);
+    --ink:#eef1f8;
+    --sub:#9aa3bd;
+    --moon:#f4e7b5;
+    --accent:#8aa0ff;
+    --accent-deep:#5468d4;
+    --good:#76c79a;
+    --warn:#e8b06a;
+    --shadow:0 10px 40px rgba(0,0,0,.45);
+    --r:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1d2a52 0%, transparent 60%),
+      radial-gradient(900px 500px at 10% 0%, #21183f 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+    color:var(--ink);line-height:1.6;min-height:100%;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(40px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    overflow-x:hidden;
+  }
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.6;
+    animation:tw 4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.15}50%{opacity:.8}}
+
+  .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:26px 18px 0}
+  header{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 22px}
+  h1{font-size:20px;margin:0;letter-spacing:.03em;font-weight:700}
+  .streak{font-size:12.5px;color:var(--sub);background:var(--card);border:1px solid var(--line);
+    padding:6px 11px;border-radius:999px;white-space:nowrap}
+  .streak b{color:var(--moon)}
+
+  .clock{text-align:center;margin:8px 0 4px}
+  .now{font-size:54px;font-weight:300;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+  .now small{font-size:22px;color:var(--sub);margin-left:4px}
+  .moon{font-size:30px;display:block;margin-bottom:2px;filter:drop-shadow(0 0 14px rgba(244,231,181,.5))}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .pad{padding:18px}
+
+  .wakerow{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px;gap:12px}
+  .wakerow label{font-size:13.5px;color:var(--sub)}
+  input[type=time]{
+    background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--ink);
+    font:inherit;font-size:16px;padding:9px 12px;border-radius:12px;font-variant-numeric:tabular-nums;
+  }
+  input[type=time]:focus{outline:none;border-color:var(--accent)}
+
+  .sleepmath{text-align:center;padding:20px 18px}
+  .smlabel{font-size:12.5px;color:var(--sub);letter-spacing:.04em}
+  .smbig{font-size:30px;font-weight:700;margin:4px 0 2px;letter-spacing:.01em}
+  .smbig .u{font-size:18px;color:var(--sub);font-weight:500;margin:0 2px}
+  .smnote{font-size:13px;font-weight:600}
+  .smnote.good{color:var(--good)}
+  .smnote.warn{color:var(--warn)}
+  .smnote.much{color:var(--accent)}
+
+  .btns{display:flex;flex-direction:column;gap:11px;margin:22px 0 14px}
+  .btn{border:0;font:inherit;font-weight:700;font-size:16px;padding:16px 0;border-radius:16px;cursor:pointer;
+    transition:transform .12s,opacity .2s,box-shadow .2s}
+  .btn:active{transform:scale(.975)}
+  .btn.primary{color:#0b1020;
+    background:linear-gradient(135deg,#f4e7b5,#cdb6ff);
+    box-shadow:0 8px 26px rgba(205,182,255,.28)}
+  .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:14.5px;padding:14px 0;font-weight:600}
+
+  /* excuse card */
+  .excuse{display:none;margin:0 0 6px}
+  .excuse.show{display:block;animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .excuse .pad{display:flex;gap:13px;align-items:flex-start}
+  .excuse .em{font-size:26px;line-height:1.2}
+  .excuse .tx{font-size:16px;font-weight:600;line-height:1.5}
+  .excuse .again{color:var(--accent);font-size:12.5px;margin-top:8px;cursor:pointer;display:inline-block}
+
+  footer{text-align:center;color:var(--sub);font-size:11.5px;margin:24px 0 6px;opacity:.8}
+
+  /* wind-down overlay */
+  .overlay{position:fixed;inset:0;z-index:20;display:none;
+    background:radial-gradient(800px 500px at 50% 30%, #1a2243 0%, #0b1020 70%);
+    color:var(--ink);text-align:center;flex-direction:column;align-items:center;justify-content:center;
+    padding:30px;transition:background 1s}
+  .overlay.show{display:flex}
+  .dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1.5s linear}
+  .ov-in{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+  .breath{width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, rgba(244,231,181,.85), rgba(138,160,255,.35) 70%, transparent 72%);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform 4s ease-in-out;will-change:transform;
+    box-shadow:0 0 60px rgba(138,160,255,.3)}
+  .breath span{font-size:18px;font-weight:600;color:#0b1020;text-shadow:0 1px 6px rgba(255,255,255,.4)}
+  .ov-msg{font-size:17px;color:#dfe4f5;margin-top:30px;min-height:26px;transition:opacity .8s}
+  .ov-end{font-size:34px;font-weight:700;margin-top:18px;opacity:0;transition:opacity 1.2s}
+  .ov-end.show{opacity:1}
+  .ov-quit{margin-top:34px;background:transparent;border:1px solid var(--line);color:var(--sub);
+    font:inherit;font-size:13px;padding:10px 18px;border-radius:999px;cursor:pointer}
+  .ov-home{margin-top:20px;background:var(--card);border:1px solid var(--line);color:var(--ink);
+    font:inherit;font-size:14px;padding:12px 26px;border-radius:14px;cursor:pointer;display:none}
+  .ov-home.show{display:inline-block}
+</style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <div class="wrap">
+    <header>
+      <h1>ねむりスイッチ</h1>
+      <div class="streak" id="streak">🌙 連続 <b>0</b>日</div>
+    </header>
+
+    <div class="clock">
+      <span class="moon">🌙</span>
+      <div class="now" id="now">--:--</div>
+    </div>
+
+    <div class="card">
+      <div class="wakerow pad">
+        <label for="wake">明日の起きる時間</label>
+        <input type="time" id="wake" value="07:00">
+      </div>
+      <div class="sleepmath" style="border-top:1px solid var(--line)">
+        <div class="smlabel">今ベッドに入ると</div>
+        <div class="smbig" id="smbig">—</div>
+        <div class="smnote" id="smnote">起きる時間を入れてね</div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="btn primary" id="startBtn">おやすみモードを始める</button>
+      <button class="btn ghost" id="excuseBtn">寝る言い訳をちょうだい 😌</button>
+    </div>
+
+    <div class="card excuse" id="excuse">
+      <div class="pad">
+        <div class="em" id="exEm">💤</div>
+        <div>
+          <div class="tx" id="exTx"></div>
+          <span class="again" id="exAgain">もう一つ →</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>記録はこの端末の中だけ。通信もアカウントもなし。</footer>
+  </div>
+
+  <!-- wind-down -->
+  <div class="overlay" id="overlay">
+    <div class="dim" id="dim"></div>
+    <div class="ov-in">
+      <div class="breath" id="breath"><span id="breathTxt">吸って…</span></div>
+      <div class="ov-msg" id="ovMsg">画面から、ゆっくり手を放そう</div>
+      <div class="ov-end" id="ovEnd">おやすみ 🌙</div>
+      <button class="ov-quit" id="ovQuit">やっぱりまだ起きてる</button>
+      <button class="ov-home" id="ovHome">そっと閉じる</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---- stars ----
+  const sw = document.getElementById('stars');
+  for(let i=0;i<42;i++){
+    const s=document.createElement('i');
+    s.style.left=Math.random()*100+'%';
+    s.style.top=Math.random()*100+'%';
+    s.style.animationDelay=(Math.random()*4)+'s';
+    s.style.opacity=(.2+Math.random()*.5);
+    sw.appendChild(s);
+  }
+
+  const KWAKE='sleepNudge.wake', KSTREAK='sleepNudge.streak', KLAST='sleepNudge.lastNight';
+  const $=id=>document.getElementById(id);
+  const wake=$('wake'), nowEl=$('now'), smbig=$('smbig'), smnote=$('smnote');
+
+  // restore wake time
+  const savedWake=localStorage.getItem(KWAKE); if(savedWake) wake.value=savedWake;
+
+  // ---- streak ----
+  function dayStr(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function renderStreak(){
+    const n=parseInt(localStorage.getItem(KSTREAK)||'0',10);
+    $('streak').innerHTML='🌙 連続 <b>'+n+'</b>日';
+  }
+  function bumpStreak(){
+    const today=new Date();
+    const tStr=dayStr(today);
+    const last=localStorage.getItem(KLAST);
+    let n=parseInt(localStorage.getItem(KSTREAK)||'0',10);
+    if(last===tStr) return n; // already counted tonight
+    const y=new Date(today); y.setDate(y.getDate()-1);
+    n = (last===dayStr(y)) ? n+1 : 1;
+    localStorage.setItem(KSTREAK,String(n));
+    localStorage.setItem(KLAST,tStr);
+    renderStreak();
+    return n;
+  }
+  renderStreak();
+
+  // ---- clock + sleep math ----
+  function pad(x){return String(x).padStart(2,'0');}
+  function update(){
+    const now=new Date();
+    nowEl.innerHTML=pad(now.getHours())+':'+pad(now.getMinutes())+'<small>:'+pad(now.getSeconds())+'</small>';
+    const v=wake.value;
+    if(!v){smbig.textContent='—';smnote.textContent='起きる時間を入れてね';smnote.className='smnote';return;}
+    const [wh,wm]=v.split(':').map(Number);
+    const target=new Date(now); target.setHours(wh,wm,0,0);
+    if(target<=now) target.setDate(target.getDate()+1);
+    let mins=Math.round((target-now)/60000);
+    const h=Math.floor(mins/60), m=mins%60;
+    smbig.innerHTML='約 '+h+'<span class="u">時間</span>'+pad(m)+'<span class="u">分</span>';
+    const hrs=mins/60;
+    if(hrs<6){smnote.textContent='ちょっと短いかも。今すぐ横になろう';smnote.className='smnote warn';}
+    else if(hrs<=9){smnote.textContent='ちょうどいい睡眠。いま寝るの正解';smnote.className='smnote good';}
+    else{smnote.textContent='たっぷり眠れる。ゆっくりどうぞ';smnote.className='smnote much';}
+  }
+  wake.addEventListener('change',()=>{localStorage.setItem(KWAKE,wake.value);update();});
+  update(); setInterval(update,1000);
+
+  // ---- excuses ----
+  const EX=[
+    ['📵','そのタイムライン、明日も流れてる。'],
+    ['🌌','続きは、夢で見よう。'],
+    ['🏅','今日のえらいこと：ちゃんと寝る。'],
+    ['🔋','スマホはもう充電。あなたも充電。'],
+    ['🙏','明日のあなたが「ありがとう」って言ってる。'],
+    ['🎬','あと1本の動画より、あと1時間の睡眠。'],
+    ['🌍','世界はあなたが寝てる間も回るから大丈夫。'],
+    ['📨','未読は逃げない。睡眠は逃げる。'],
+    ['☕','夜更かしの楽しさは、寝不足が全部持っていく。'],
+    ['🛌','ベッドはもう、あなたを待ってる。'],
+  ];
+  let lastEx=-1;
+  function showExcuse(){
+    let i; do{i=Math.floor(Math.random()*EX.length);}while(i===lastEx&&EX.length>1);
+    lastEx=i;
+    $('exEm').textContent=EX[i][0];
+    $('exTx').textContent=EX[i][1];
+    $('excuse').classList.add('show');
+  }
+  $('excuseBtn').addEventListener('click',showExcuse);
+  $('exAgain').addEventListener('click',showExcuse);
+
+  // ---- wind-down ritual ----
+  const overlay=$('overlay'), dim=$('dim'), breath=$('breath'), breathTxt=$('breathTxt'),
+        ovMsg=$('ovMsg'), ovEnd=$('ovEnd'), ovQuit=$('ovQuit'), ovHome=$('ovHome');
+  const MSGS=['画面から、ゆっくり手を放そう','肩の力を、すーっと抜いて','まぶたが重くなってきたら、その通りに','今日も一日、おつかれさま','このまま、目を閉じて大丈夫'];
+  const DURATION=70000; // ~70s
+  let timers=[], running=false;
+
+  function clearTimers(){timers.forEach(clearTimeout);timers.forEach(clearInterval);timers=[];}
+
+  function breathe(){
+    // inhale 4s -> hold 1s -> exhale 6s loop
+    function cycle(){
+      breathTxt.textContent='吸って…';
+      breath.style.transition='transform 4s ease-in-out';
+      breath.style.transform='scale(1.18)';
+      timers.push(setTimeout(()=>{ breathTxt.textContent='とめて'; },4000));
+      timers.push(setTimeout(()=>{
+        breathTxt.textContent='吐いて…';
+        breath.style.transition='transform 6s ease-in-out';
+        breath.style.transform='scale(0.8)';
+      },5000));
+    }
+    cycle();
+    const iv=setInterval(cycle,11000); timers.push(iv);
+  }
+
+  function start(){
+    if(running) return; running=true;
+    overlay.classList.add('show');
+    ovEnd.classList.remove('show'); ovHome.classList.remove('show');
+    ovMsg.style.opacity='1'; dim.style.opacity='0';
+    breath.style.transform='scale(0.8)';
+    setTimeout(breathe,80);
+    // rotate messages
+    let mi=0;
+    const msgIv=setInterval(()=>{
+      mi=(mi+1)%MSGS.length;
+      ovMsg.style.opacity='0';
+      setTimeout(()=>{ovMsg.textContent=MSGS[mi];ovMsg.style.opacity='1';},800);
+    },12000); timers.push(msgIv);
+    // gradual dimming near the end
+    timers.push(setTimeout(()=>{dim.style.transition='opacity 25s linear';dim.style.opacity='.9';},DURATION-30000));
+    // finish
+    timers.push(setTimeout(finish,DURATION));
+  }
+
+  function finish(){
+    clearTimers();
+    breath.style.transition='transform 2s ease, opacity 2s';
+    breath.style.transform='scale(0.55)'; breath.style.opacity='.25';
+    breathTxt.textContent='';
+    ovMsg.style.opacity='0';
+    const n=bumpStreak();
+    setTimeout(()=>{
+      ovEnd.innerHTML='おやすみ 🌙<div style="font-size:14px;color:var(--sub);font-weight:500;margin-top:10px">また明日ね（連続 '+n+'日目）</div>';
+      ovEnd.classList.add('show');
+      ovQuit.style.display='none';
+      ovHome.classList.add('show');
+    },1200);
+  }
+
+  function closeOverlay(){
+    clearTimers(); running=false;
+    overlay.classList.remove('show');
+    breath.style.opacity='1'; breath.style.transform='scale(0.8)';
+    breathTxt.textContent='吸って…';
+    ovQuit.style.display=''; ovEnd.classList.remove('show'); ovHome.classList.remove('show');
+    dim.style.transition='opacity 1.5s'; dim.style.opacity='0';
+  }
+
+  $('startBtn').addEventListener('click',start);
+  ovQuit.addEventListener('click',closeOverlay);
+  ovHome.addEventListener('click',closeOverlay);
+})();
+</script>
+</body>
+</html>

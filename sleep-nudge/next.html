@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ねむりスイッチ — 次の実装項目</title>
+<style>
+  :root{--bg:#0b1020;--bg2:#131a31;--card:rgba(255,255,255,.05);--line:rgba(255,255,255,.10);
+    --ink:#eef1f8;--sub:#9aa3bd;--moon:#f4e7b5;--accent:#8aa0ff;
+    --shadow:0 10px 40px rgba(0,0,0,.45)}
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:radial-gradient(900px 500px at 80% -10%,#1d2a52 0%,transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));
+    color:var(--ink);line-height:1.7;margin:0;padding:26px 18px 60px;min-height:100vh}
+  .wrap{max-width:620px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .tag{color:var(--sub);font-size:13px;margin-bottom:22px}
+  .back{display:inline-block;margin-bottom:18px;color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600}
+  ol{list-style:none;counter-reset:n;margin:0;padding:0}
+  li{counter-increment:n;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:16px 18px 16px 56px;position:relative;margin-bottom:14px}
+  li::before{content:counter(n);position:absolute;left:16px;top:16px;width:28px;height:28px;
+    background:linear-gradient(135deg,#f4e7b5,#cdb6ff);color:#0b1020;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .pri{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;
+    border-radius:999px;margin-bottom:7px}
+  .p-high{background:rgba(232,176,106,.18);color:#e8b06a}
+  .p-mid{background:rgba(138,160,255,.18);color:#9fb0ff}
+  .p-low{background:rgba(255,255,255,.08);color:#9aa3bd}
+  h3{margin:0 0 5px;font-size:16px}
+  .why{font-size:13.5px;color:var(--sub);margin:0}
+  .why b{color:var(--ink)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← ねむりスイッチに戻る</a>
+    <h1>次の実装項目</h1>
+    <div class="tag">優先度つき。「なぜ次か」を一行添えています。</div>
+
+    <ol>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>おやすみ時刻のリマインド通知（ブラウザ通知 / 設定した就寝目標）</h3>
+        <p class="why"><b>なぜ次か：</b>このアプリの肝は「寝るきっかけ」を外から与えること。自分で開かないと始まらない今の形だと届かないので、決めた時刻にこちらから声をかけるのが最重要。</p>
+      </li>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>ウィンドダウンの長さ・呼吸テンポを選べるようにする</h3>
+        <p class="why"><b>なぜ次か：</b>70秒固定だと「もう少し」「短く」が合わない人が離脱する。眠りやすさは人それぞれなので、続けてもらうために早めに調整可能にしたい。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>就寝ログとカレンダー表示（連続日数の可視化を強化）</h3>
+        <p class="why"><b>なぜ次か：</b>連続日数だけだと途切れた時に心が折れる。カレンダーで「だいたい守れてる」が見えると、ゲーム性と継続のモチベが上がる。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>環境音（雨・波・ホワイトノイズ）をフェードアウト付きで再生</h3>
+        <p class="why"><b>なぜ次か：</b>視覚の誘導はできたので、次は聴覚。眠りに入る決定打になりやすく、画面を見続けなくて済むので「画面を手放す」目的とも噛み合う。</p>
+      </li>
+      <li>
+        <span class="pri p-low">優先度 低</span>
+        <h3>言い訳カードの追加・自作・シェア</h3>
+        <p class="why"><b>なぜ次か：</b>遊び要素として魅力的だが睡眠の本質ではない。コア（通知・呼吸・記録）が固まってから、定着ユーザー向けの楽しみとして足すのが順当。</p>
+      </li>
+    </ol>
+  </div>
+</body>
+</html>
