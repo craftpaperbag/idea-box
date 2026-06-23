@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>10Xの問い</title>
+<style>
+  :root{
+    --bg:#0f1117;
+    --bg2:#151823;
+    --card:#1b1f2c;
+    --card2:#222738;
+    --ink:#f3f5fa;
+    --sub:#9aa3b7;
+    --line:#2c3247;
+    --accent:#7c6cff;
+    --accent-soft:#241f44;
+    --gold:#ffcf6b;
+    --r:20px;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#1a1f33 0%,var(--bg) 55%);
+    color:var(--ink);line-height:1.65;min-height:100vh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(40px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  }
+  .wrap{max-width:600px;margin:0 auto;padding:24px 16px 0}
+
+  header{margin:6px 2px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  h1{font-size:22px;margin:0;letter-spacing:.02em;font-weight:800}
+  h1 .x{color:var(--accent)}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:5px}
+  .nextlink{flex:none;font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);
+    padding:7px 11px;border-radius:999px;white-space:nowrap;background:var(--card)}
+  .nextlink:active{transform:scale(.96)}
+
+  /* context */
+  .ctx{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:16px}
+  .ctx label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:7px;letter-spacing:.02em}
+  .ctx input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+    color:var(--ink);font:inherit;font-size:15px;padding:10px 12px;outline:none}
+  .ctx input:focus{border-color:var(--accent)}
+  .ctx input::placeholder{color:#5b637a}
+
+  /* filter chips */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .fchip{border:1.5px solid var(--line);background:var(--card);color:var(--sub);font:inherit;
+    font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:999px;cursor:pointer;
+    transition:transform .1s,background .15s,color .15s,border-color .15s}
+  .fchip:active{transform:scale(.94)}
+  .fchip[data-on="1"]{color:var(--ink);background:var(--accent-soft);border-color:var(--accent)}
+
+  /* card */
+  .card{position:relative;background:linear-gradient(160deg,var(--card2),var(--card));
+    border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:24px 22px 22px;min-height:230px;display:flex;flex-direction:column;
+    cursor:pointer;overflow:hidden;transition:transform .18s ease}
+  .card:active{transform:scale(.985)}
+  .card::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(420px 180px at 85% -20%,rgba(124,108,255,.18),transparent 70%);pointer-events:none}
+  .cat{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;
+    font-size:11.5px;font-weight:800;letter-spacing:.04em;color:var(--ink);
+    background:rgba(255,255,255,.06);border:1px solid var(--line);
+    padding:5px 11px;border-radius:999px;margin-bottom:16px}
+  .cat .dot{width:9px;height:9px;border-radius:50%}
+  .q{font-size:22px;font-weight:700;line-height:1.55;letter-spacing:.01em;flex:1;
+    transition:opacity .18s ease,transform .18s ease}
+  .q.swap{opacity:0;transform:translateY(8px)}
+  .cardfoot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px}
+  .count{font-size:12px;color:var(--sub)}
+  .star{flex:none;background:none;border:1px solid var(--line);color:var(--sub);font-size:17px;
+    width:40px;height:40px;border-radius:12px;cursor:pointer;display:grid;place-items:center;
+    transition:transform .12s,color .15s,border-color .15s,background .15s}
+  .star:active{transform:scale(.9)}
+  .star[data-on="1"]{color:var(--gold);border-color:var(--gold);background:rgba(255,207,107,.08)}
+
+  /* actions */
+  .actions{display:flex;gap:10px;margin:14px 0 6px}
+  .btn{flex:1;border:none;border-radius:14px;font:inherit;font-size:15px;font-weight:800;
+    padding:14px;cursor:pointer;transition:transform .1s,filter .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:linear-gradient(135deg,#8a7bff,#6a5bff);color:#fff;
+    box-shadow:0 8px 22px rgba(124,108,255,.35)}
+  .btn.ghost{flex:none;width:54px;background:var(--card);color:var(--sub);border:1px solid var(--line);font-size:18px}
+
+  /* note */
+  .note{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .note label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px}
+  .note textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+    color:var(--ink);font:inherit;font-size:15px;line-height:1.6;padding:11px 12px;outline:none;
+    resize:vertical;min-height:72px}
+  .note textarea:focus{border-color:var(--accent)}
+  .note textarea::placeholder{color:#5b637a}
+  .savebtn{margin-top:10px;width:100%;border:none;border-radius:11px;font:inherit;font-size:14px;font-weight:800;
+    padding:11px;background:var(--accent-soft);color:#cfc8ff;border:1px solid var(--accent);cursor:pointer}
+  .savebtn:active{transform:scale(.98)}
+  .savebtn:disabled{opacity:.4;cursor:default;transform:none}
+
+  /* log */
+  .logsec{margin-top:26px}
+  .loghead{display:flex;align-items:center;justify-content:space-between;margin:0 4px 12px}
+  .loghead h2{font-size:15px;margin:0;font-weight:800;letter-spacing:.02em}
+  .loghead .tools{display:flex;gap:8px}
+  .tbtn{font:inherit;font-size:12px;font-weight:700;color:var(--sub);background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer}
+  .tbtn:active{transform:scale(.95)}
+
+  .empty{text-align:center;color:var(--sub);font-size:13.5px;padding:26px 16px;
+    border:1px dashed var(--line);border-radius:16px;background:rgba(255,255,255,.015)}
+  .empty .big{font-size:30px;margin-bottom:8px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:11px;
+    animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .item .iq{font-size:13.5px;color:var(--sub);font-weight:700;margin-bottom:6px;display:flex;gap:8px}
+  .item .iq .idot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none}
+  .item .ia{font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  .item .ifoot{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+  .item .idate{font-size:11.5px;color:#5b637a}
+  .item .del{font:inherit;font-size:12px;color:#ff8a8a;background:none;border:none;cursor:pointer;padding:4px}
+
+  .foot{text-align:center;color:#5b637a;font-size:11.5px;margin:28px 0 6px}
+  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;padding:11px 18px;border-radius:999px;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="x">10X</span>の問い</h1>
+      <div class="tag">いまの目標に「桁違い」を持ち込む問いを引く</div>
+    </div>
+    <a class="nextlink" href="./next.html" target="_blank" rel="noopener">next →</a>
+  </header>
+
+  <div class="ctx">
+    <label for="ctx">いま考えていること（任意）</label>
+    <input id="ctx" type="text" placeholder="例: 月100人に使われるアプリを作る" autocomplete="off">
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="card" id="card" role="button" tabindex="0" aria-label="次の問いを引く">
+    <span class="cat" id="cat"><span class="dot"></span><span class="catname"></span></span>
+    <div class="q" id="q"></div>
+    <div class="cardfoot">
+      <span class="count" id="count"></span>
+      <button class="star" id="star" aria-label="この問いをお気に入り">☆</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn ghost" id="back" aria-label="前の問い">↩</button>
+    <button class="btn primary" id="next">次の問いを引く</button>
+  </div>
+
+  <div class="note">
+    <label for="ans">この問いへの一言（気づき・答え）</label>
+    <textarea id="ans" placeholder="思いついたことをそのまま書く。あとで気づきログに残ります。"></textarea>
+    <button class="savebtn" id="save" disabled>気づきログに保存</button>
+  </div>
+
+  <div class="logsec">
+    <div class="loghead">
+      <h2>気づきログ</h2>
+      <div class="tools">
+        <button class="tbtn" id="copy">コピー</button>
+        <button class="tbtn" id="clear">全消去</button>
+      </div>
+    </div>
+    <div id="log"></div>
+  </div>
+
+  <div class="foot">データはこの端末のブラウザ内だけに保存されます</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var LS={ctx:"tenx.ctx",log:"tenx.log",fav:"tenx.fav",filter:"tenx.filter"};
+
+  var CATS={
+    scale:   {name:"規模を上げる", color:"#7c6cff"},
+    constraint:{name:"制約を疑う", color:"#ff8e6b"},
+    speed:   {name:"速さ・時間", color:"#5bd0c0"},
+    invert:  {name:"前提を逆転", color:"#ffcf6b"},
+    customer:{name:"顧客と価値", color:"#6bb8ff"},
+    leverage:{name:"テコ・集中", color:"#e07bff"}
+  };
+
+  var DECK=[
+    // scale
+    ["scale","いまの目標をそのまま10倍にするなら、何を根本から作り直す必要がある？"],
+    ["scale","「がんばって2倍」ではなく「設計し直して10倍」になる打ち手は何だろう？"],
+    ["scale","100倍のユーザーが急に来たら、最初に壊れるのはどこ？"],
+    ["scale","いま手作業でやっていることを、1000人規模でやるとしたら？"],
+    ["scale","この成果を、自分が寝ている間にも増え続ける形にできないか？"],
+    // constraint
+    ["constraint","いま「当然の制約」と思っているものを1つだけ外せるなら、どれを外す？"],
+    ["constraint","そのボトルネックは本当に動かせない？「誰が」そう決めた？"],
+    ["constraint","予算が10倍あったら最初に何に使う？逆にゼロなら何を捨てる？"],
+    ["constraint","時間が今の1/10しかないなら、何を残して何を捨てる？"],
+    ["constraint","「できない理由」を3つ挙げて、それぞれ本当に正しいか1つずつ潰すと？"],
+    // speed
+    ["speed","これを“今日中に1個”出すとしたら、何を削る？"],
+    ["speed","1年かかる前提のものを1週間にするには、何を並列にできる？"],
+    ["speed","完成を待たずに価値が出る「最初の0.1」は何？"],
+    ["speed","フィードバックを得るまでの時間を半分にする方法は？"],
+    // invert
+    ["invert","この計画が1年後に大失敗したとしたら、原因は何だった？"],
+    ["invert","「絶対こうあるべき」という思い込みを1つ捨てるなら、どれ？"],
+    ["invert","もし今日ゼロから始めるなら、同じやり方を選ぶ？選ばないなら何を変える？"],
+    ["invert","競合や状況が一番嫌がる“ずるい一手”は何だろう？"],
+    ["invert","成功している人なら、ここで何を「やらない」と決めるだろう？"],
+    // customer
+    ["customer","一番熱狂してくれる10人は誰？その人だけのために作るなら何が変わる？"],
+    ["customer","ユーザーが「これがないと困る」と言うのは、具体的にどの瞬間？"],
+    ["customer","お金を払ってでも消したい痛みは、本当はどこにある？"],
+    ["customer","10倍うれしいと言わせるには、体験のどこを過剰にすればいい？"],
+    // leverage
+    ["leverage","1回作れば何度も効く「型・仕組み」にできる部分はどこ？"],
+    ["leverage","自分がやらなくていいことは何？誰に・何に任せられる？"],
+    ["leverage","一番効く「テコ」を1つだけ選ぶとしたら、どれに全部賭ける？"],
+    ["leverage","80%の成果を生んでいる20%はどこ？残りはやめられない？"],
+    ["leverage","いまやめても誰も困らないことは何？"]
+  ];
+
+  var $=function(s){return document.querySelector(s)};
+  var cardEl=$("#card"),catEl=$("#cat"),catName=catEl.querySelector(".catname"),catDot=catEl.querySelector(".dot");
+  var qEl=$("#q"),countEl=$("#count"),starEl=$("#star"),ansEl=$("#ans"),saveEl=$("#save");
+  var ctxEl=$("#ctx"),logEl=$("#log"),filtersEl=$("#filters"),toastEl=$("#toast");
+
+  var state={cur:-1, history:[], order:[], pos:-1};
+  var activeFilters=load(LS.filter,Object.keys(CATS).slice()); // all on by default
+  var favs=load(LS.fav,[]);
+  var logs=load(LS.log,[]);
+
+  function load(k,def){try{var v=JSON.parse(localStorage.getItem(k));return v==null?def:v}catch(e){return def}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toast._t);
+    toast._t=setTimeout(function(){toastEl.classList.remove("show")},1500)}
+
+  // ---- filters ----
+  function renderFilters(){
+    filtersEl.innerHTML="";
+    Object.keys(CATS).forEach(function(k){
+      var on=activeFilters.indexOf(k)>=0;
+      var b=document.createElement("button");
+      b.className="fchip";b.dataset.on=on?"1":"0";b.textContent=CATS[k].name;
+      b.style.cssText=on?("border-color:"+CATS[k].color+";color:"+CATS[k].color):"";
+      b.onclick=function(){
+        var i=activeFilters.indexOf(k);
+        if(i>=0){ if(activeFilters.length>1) activeFilters.splice(i,1); else { toast("最低1つは必要です"); return; } }
+        else activeFilters.push(k);
+        save(LS.filter,activeFilters);
+        renderFilters();buildOrder(true);draw(1);
+      };
+      filtersEl.appendChild(b);
+    });
+  }
+
+  function pool(){
+    var ids=[];
+    DECK.forEach(function(c,i){if(activeFilters.indexOf(c[0])>=0)ids.push(i)});
+    return ids;
+  }
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+  function buildOrder(reset){
+    state.order=shuffle(pool());
+    if(reset){state.pos=-1;}
+  }
+
+  // ---- card render ----
+  function show(idx,animate){
+    state.cur=idx;
+    var c=DECK[idx];var cat=CATS[c[0]];
+    function paint(){
+      catName.textContent=cat.name;catDot.style.background=cat.color;
+      catEl.style.borderColor=cat.color;
+      qEl.textContent=c[1];
+      starEl.dataset.on=favs.indexOf(idx)>=0?"1":"0";
+      starEl.textContent=favs.indexOf(idx)>=0?"★":"☆";
+      countEl.textContent=(state.pos+1)+" / "+state.order.length+"　·　全"+DECK.length+"問";
+      // restore note for this question if exists (latest)
+      ansEl.value="";
+      saveEl.disabled=true;
+    }
+    if(animate){
+      qEl.classList.add("swap");
+      setTimeout(function(){paint();qEl.classList.remove("swap")},150);
+    } else paint();
+  }
+
+  function draw(dir){
+    if(!state.order.length)buildOrder(true);
+    if(dir>0){
+      state.pos++;
+      if(state.pos>=state.order.length){buildOrder(false);state.pos=0;}
+    } else {
+      state.pos--;
+      if(state.pos<0){state.pos=state.order.length-1;}
+    }
+    show(state.order[state.pos],true);
+  }
+
+  // ---- log render ----
+  function renderLog(){
+    if(!logs.length){
+      logEl.innerHTML='<div class="empty"><div class="big">💡</div>まだ気づきはありません。<br>問いを引いて、ひとこと書いてみよう。</div>';
+      return;
+    }
+    logEl.innerHTML="";
+    logs.forEach(function(item){
+      var cat=CATS[item.cat]||{name:"",color:"#888"};
+      var el=document.createElement("div");el.className="item";
+      var d=new Date(item.t);
+      var ds=(d.getMonth()+1)+"/"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+      el.innerHTML=
+        '<div class="iq"><span class="idot" style="background:'+cat.color+'"></span><span></span></div>'+
+        '<div class="ia"></div>'+
+        '<div class="ifoot"><span class="idate">'+ds+'</span><button class="del">削除</button></div>';
+      el.querySelector(".iq span:last-child").textContent=item.q;
+      el.querySelector(".ia").textContent=item.a;
+      el.querySelector(".del").onclick=function(){
+        logs=logs.filter(function(x){return x.id!==item.id});
+        save(LS.log,logs);renderLog();
+      };
+      logEl.appendChild(el);
+    });
+  }
+
+  // ---- events ----
+  cardEl.addEventListener("click",function(){draw(1)});
+  cardEl.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();draw(1)}});
+  $("#next").addEventListener("click",function(e){e.stopPropagation();draw(1)});
+  $("#back").addEventListener("click",function(e){e.stopPropagation();draw(-1)});
+
+  starEl.addEventListener("click",function(e){
+    e.stopPropagation();
+    var i=favs.indexOf(state.cur);
+    if(i>=0)favs.splice(i,1);else favs.push(state.cur);
+    save(LS.fav,favs);
+    starEl.dataset.on=favs.indexOf(state.cur)>=0?"1":"0";
+    starEl.textContent=favs.indexOf(state.cur)>=0?"★":"☆";
+    toast(i>=0?"お気に入り解除":"お気に入りに追加 ★");
+  });
+
+  ansEl.addEventListener("input",function(){saveEl.disabled=ansEl.value.trim()==="" });
+
+  saveEl.addEventListener("click",function(){
+    var a=ansEl.value.trim();if(!a)return;
+    var c=DECK[state.cur];
+    logs.unshift({id:Date.now()+"_"+Math.random().toString(36).slice(2,6),
+      cat:c[0],q:c[1],a:a,t:Date.now(),ctx:ctxEl.value.trim()});
+    save(LS.log,logs);
+    ansEl.value="";saveEl.disabled=true;
+    renderLog();toast("気づきを保存しました 💡");
+  });
+
+  $("#copy").addEventListener("click",function(){
+    if(!logs.length){toast("コピーするものがありません");return}
+    var head=ctxEl.value.trim()?("【テーマ】"+ctxEl.value.trim()+"\n\n"):"";
+    var txt=head+logs.map(function(x){return "Q. "+x.q+"\nA. "+x.a}).join("\n\n");
+    var done=function(){toast("クリップボードにコピーしました")};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done,function(){fallback(txt,done)});
+    } else fallback(txt,done);
+  });
+  function fallback(txt,done){
+    var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast("コピーできませんでした")}
+    document.body.removeChild(ta);
+  }
+
+  $("#clear").addEventListener("click",function(){
+    if(!logs.length)return;
+    if(confirm("気づきログをすべて消去しますか？この操作は元に戻せません。")){
+      logs=[];save(LS.log,logs);renderLog();toast("消去しました");
+    }
+  });
+
+  ctxEl.value=load(LS.ctx,"");
+  ctxEl.addEventListener("input",function(){save(LS.ctx,ctxEl.value)});
+
+  // init
+  renderFilters();
+  buildOrder(true);
+  draw(1);
+  renderLog();
+})();
+</script>
+</body>
+</html>

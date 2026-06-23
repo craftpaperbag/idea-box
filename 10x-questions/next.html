@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>10Xの問い — 次の実装項目</title>
+<style>
+  :root{
+    --bg:#0f1117;--card:#1b1f2c;--ink:#f3f5fa;--sub:#9aa3b7;--line:#2c3247;--accent:#7c6cff;--gold:#ffcf6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#1a1f33 0%,var(--bg) 55%);color:var(--ink);
+    line-height:1.7;padding:env(safe-area-inset-top) 16px calc(48px + env(safe-area-inset-bottom))}
+  .wrap{max-width:600px;margin:0 auto;padding-top:24px}
+  header{margin:6px 2px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  h1{font-size:21px;margin:0;font-weight:800}
+  h1 .x{color:var(--accent)}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:5px}
+  .back{flex:none;font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);
+    padding:7px 11px;border-radius:999px;white-space:nowrap;background:var(--card)}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 15px;margin-bottom:13px;position:relative;overflow:hidden}
+  .item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  .item .p{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.05em;color:#0f1117;
+    background:var(--gold);padding:3px 9px;border-radius:999px;margin-bottom:9px}
+  .item h3{font-size:16px;margin:0 0 6px;font-weight:800}
+  .item .why{font-size:13.5px;color:var(--sub);margin:0}
+  .item .why b{color:var(--ink);font-weight:700}
+  .item:nth-child(2)::before{background:var(--gold)}
+  .foot{text-align:center;color:#5b637a;font-size:11.5px;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="x">10X</span>の問い — 次の実装項目</h1>
+      <div class="tag">優先度の高い順。各項目に「なぜ次か」を一行。</div>
+    </div>
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← 本体</a>
+  </header>
+
+  <div class="item">
+    <span class="p">優先度 1</span>
+    <h3>お気に入りだけを通しで引く「★モード」</h3>
+    <p class="why"><b>なぜ次か：</b>すでに★を付ける導線はあるのに見返す場所がない。刺さった問いを繰り返し当てるのが10X思考の習慣化に直結するから。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">優先度 2</span>
+    <h3>「テーマ」をAI/テンプレで具体化した問いに変換</h3>
+    <p class="why"><b>なぜ次か：</b>入力したテーマを問い文に差し込めば（例:「○○を10倍にするなら」）、自分ごと化して一気に思考が進むから。まずは文字列差し込みのテンプレ版から。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">優先度 3</span>
+    <h3>気づきログのカテゴリ別フィルタ＆Markdown書き出し</h3>
+    <p class="why"><b>なぜ次か：</b>ログが溜まると「規模の気づきだけ見たい」が出る。コピーは実装済みなので、絞り込みと.md保存で振り返り資産にできるから。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">優先度 4</span>
+    <h3>1日1問の「今日の問い」通知リマインド</h3>
+    <p class="why"><b>なぜ次か：</b>思考ツールは「思い出して開く」が最大の壁。日付固定の1問表示＋（許可制で）通知にすれば毎日の起動習慣が作れるから。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">優先度 5</span>
+    <h3>引いた問いを画像カードにしてシェア</h3>
+    <p class="why"><b>なぜ次か：</b>良い問いは人に投げたくなる。canvasで画像化できれば拡散とチームでの利用に広がるが、まず単体価値を固めてからで十分だから。</p>
+  </div>
+
+  <div class="foot">© 2026 craftpaperbag</div>
+</div>
+</body>
+</html>
