@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<!--
+  voice-transcribe — ブラウザ内で完結する音声文字起こしツール
+  ============================================================
+  方式:
+   - @huggingface/transformers (transformers.js v3) の
+     pipeline('automatic-speech-recognition', ...) を使用。
+   - Whisper モデル（onnx-community/whisper-base ほか）を
+     ブラウザ上（WebGPU / WASM オンデバイス）で実行する。
+   - 推論はすべて端末内。マイク音声や音声ファイルを fetch / WebSocket 等で
+     外部へ送る処理は一切書いていない（=「音声は外部送信しない」）。
+   - 通信が発生するのは「初回のモデル取得」だけ。モデルファイルは
+     Hugging Face CDN から初回のみ DL され、以後はブラウザキャッシュで再利用。
+     これは音声の送信ではなくモデルの取得である。
+
+  ハマりどころ（コメントで明記）:
+   - WASM の SIMD/マルチスレッド（SharedArrayBuffer）には COOP/COEP ヘッダが必要。
+     GitHub Pages や file:// などヘッダ無し配信では SharedArrayBuffer が使えず、
+     シングルスレッド WASM に自動フォールバックする（動作はするが遅くなる）。
+   - WebGPU 対応ブラウザ（navigator.gpu あり）なら device:'webgpu' で高速化。
+     無ければ WASM にフォールバックし、現在のバックエンドを UI に表示する。
+   - 16kHz モノラルへのリサンプリングは OfflineAudioContext で実施してからモデルへ渡す。
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>voice-transcribe — 端末内で完結する音声文字起こし</title>
+<style>
+  :root {
+    --bg: #0f1220;
+    --panel: #1a1f33;
+    --panel-2: #232a44;
+    --line: #2e3656;
+    --text: #e8ebf5;
+    --muted: #9aa3c4;
+    --accent: #5b8cff;
+    --accent-2: #34d399;
+    --danger: #ef6a6a;
+    --warn: #f4c152;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    padding: 16px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  header { margin: 8px 0 14px; }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; letter-spacing: .01em; }
+  .sub { color: var(--muted); font-size: .9rem; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 12px 0;
+  }
+  .privacy {
+    border-color: #2c5a44;
+    background: linear-gradient(180deg, #16241d, #15201b);
+  }
+  .privacy h2 { font-size: .98rem; margin: 0 0 6px; color: var(--accent-2); }
+  .privacy p { margin: 4px 0; font-size: .86rem; color: #c5d6cd; }
+
+  .statusbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    font-size: .85rem;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 11px; font-size: .8rem; color: var(--muted);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.idle { background: #6b7394; }
+  .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+  .dot.busy { background: var(--accent); animation: pulse 1s infinite; }
+  .dot.ok { background: var(--accent-2); }
+  .dot.err { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  label.field { display: block; font-size: .82rem; color: var(--muted); margin: 0 0 6px; }
+  select, button, input[type=file]::file-selector-button {
+    font: inherit;
+  }
+  select {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 200px; }
+
+  button {
+    cursor: pointer; border: none; border-radius: 11px;
+    padding: 12px 16px; font-weight: 600; font-size: .95rem;
+    color: #fff; background: var(--accent);
+    transition: transform .05s ease, filter .15s ease, opacity .15s ease;
+    width: 100%;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.ghost { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); }
+  button.rec { background: var(--danger); }
+  button.rec.recording { background: #b33; animation: recpulse 1.2s infinite; }
+  @keyframes recpulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,106,106,.5)} 50%{box-shadow:0 0 0 8px rgba(239,106,106,0)} }
+
+  .progress-wrap { margin-top: 10px; display: none; }
+  .progress-wrap.show { display: block; }
+  .bar {
+    height: 12px; background: var(--panel-2); border-radius: 999px; overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .bar > i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .2s ease;
+  }
+  .progress-meta { display: flex; justify-content: space-between; font-size: .76rem; color: var(--muted); margin-top: 5px; }
+  .file-list { margin-top: 8px; font-size: .73rem; color: var(--muted); max-height: 96px; overflow:auto; }
+  .file-list div { display:flex; justify-content:space-between; gap:8px; }
+
+  .input-card { display: grid; gap: 10px; }
+  input[type=file] {
+    width: 100%; color: var(--muted); font-size: .85rem;
+    background: var(--panel-2); border: 1px dashed var(--line);
+    border-radius: 10px; padding: 14px;
+  }
+  input[type=file]::file-selector-button {
+    background: var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:8px 12px; margin-right:10px; cursor:pointer; font-weight:600;
+  }
+  .rec-time { font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--text); }
+
+  .result {
+    min-height: 110px; white-space: pre-wrap; word-break: break-word;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; font-size: 1rem;
+  }
+  .result.empty { color: var(--muted); }
+  .result-actions { display: flex; gap: 10px; margin-top: 10px; }
+  .result-actions button { width: auto; flex: 1; }
+
+  .hint { font-size: .76rem; color: var(--muted); margin-top: 8px; }
+  .err-box {
+    display:none; margin-top:10px; padding:10px 12px; border-radius:10px;
+    background:#2a1820; border:1px solid #5a2c34; color:#ffb3b3; font-size:.85rem;
+  }
+  .err-box.show { display:block; }
+  a { color: var(--accent); }
+  .credits h2 { font-size: .92rem; margin: 0 0 6px; color: var(--text); }
+  .credits p { font-size: .8rem; color: var(--muted); margin: 4px 0; }
+  .credits ul { margin: 6px 0; padding-left: 18px; }
+  .credits li { font-size: .8rem; color: var(--muted); margin: 3px 0; }
+  .credits li b { color: var(--text); font-weight: 600; }
+  .credits .fineprint { font-size: .73rem; color: #7d86a8; margin-top: 8px; }
+  footer { text-align:center; color:var(--muted); font-size:.78rem; margin:18px 0 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎙️ voice-transcribe</h1>
+  <div class="sub">ブラウザ内で完結する音声文字起こし（Whisper / オンデバイス推論）</div>
+</header>
+
+<!-- プライバシー明記パネル -->
+<section class="panel privacy">
+  <h2>🔒 音声は外部送信されません</h2>
+  <p>録音・アップロードした音声の認識は、すべてこの端末（ブラウザ）の中で実行されます。音声データがサーバーへ送られることはありません。</p>
+  <p>通信が発生するのは <b>初回のモデル取得のみ</b>。Whisper モデルを Hugging Face の CDN から1度だけダウンロードし、以後はブラウザキャッシュで再利用します（これは音声の送信ではなく、モデルファイルの取得です）。</p>
+</section>
+
+<!-- 状態表示 -->
+<section class="panel">
+  <div class="statusbar">
+    <span class="chip"><span class="dot idle" id="statusDot"></span><span id="statusText">モデル未ロード</span></span>
+    <span class="chip">バックエンド: <b id="backendText">判定中…</b></span>
+    <span class="chip">モデル: <b id="modelText">—</b></span>
+  </div>
+
+  <div style="margin-top:12px" class="row">
+    <div>
+      <label class="field" for="modelSelect">モデル（精度↔軽さ）</label>
+      <select id="modelSelect">
+        <option value="onnx-community/whisper-base">whisper-base（軽量・既定）</option>
+        <option value="onnx-community/whisper-small">whisper-small（日本語精度↑・重め）</option>
+        <option value="onnx-community/whisper-tiny">whisper-tiny（最軽量・粗め）</option>
+      </select>
+    </div>
+    <div>
+      <label class="field" for="langSelect">言語</label>
+      <select id="langSelect">
+        <option value="japanese">日本語</option>
+        <option value="english">英語</option>
+        <option value="">自動判定</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="margin-top:12px">
+    <button id="loadBtn">モデルをロード（初回はダウンロード）</button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="bar"><i id="progressBar"></i></div>
+    <div class="progress-meta">
+      <span id="progressLabel">ダウンロード中…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="file-list" id="fileList"></div>
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+</section>
+
+<!-- 入力2系統 -->
+<section class="panel">
+  <div class="input-card">
+    <div>
+      <label class="field" for="fileInput">① 音声ファイルから（wav / mp3 / m4a / ogg など）</label>
+      <input type="file" id="fileInput" accept="audio/*" />
+    </div>
+
+    <div>
+      <label class="field">② マイク録音から</label>
+      <div class="row">
+        <button class="rec" id="recBtn">● 録音開始</button>
+        <div style="flex:1 1 120px; display:flex; align-items:center; justify-content:center;">
+          <span class="rec-time" id="recTime">00:00</span>
+        </div>
+      </div>
+      <div class="hint">録音を停止すると、その音声をそのまま端末内で文字起こしします。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 結果 -->
+<section class="panel">
+  <label class="field">文字起こし結果</label>
+  <div class="result empty" id="resultBox">ここに結果が表示されます。</div>
+  <div class="result-actions">
+    <button class="ghost" id="copyBtn" disabled>コピー</button>
+    <button class="ghost" id="clearBtn" disabled>クリア</button>
+  </div>
+  <div class="hint" id="timingHint"></div>
+</section>
+
+<!-- クレジット / ライセンス表記（帰属）-->
+<section class="panel credits">
+  <h2>クレジット / ライセンス</h2>
+  <p>このツールは下記のオープンソースの成果物を利用しています（モデルの重みは同梱せず、利用者のブラウザが下記の配布元から直接取得します）。</p>
+  <ul>
+    <li><b>Whisper</b> — 音声認識モデル。© OpenAI、<a href="https://github.com/openai/whisper/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>。</li>
+    <li><b>onnx-community/whisper-base ほか</b> — Whisper の ONNX 変換版。<a href="https://huggingface.co/onnx-community" target="_blank" rel="noopener">onnx-community (Hugging Face)</a> による配布物を、各モデルカードのライセンスに従って利用。</li>
+    <li><b>Transformers.js（@huggingface/transformers）</b> — ブラウザ内推論ライブラリ。© Hugging Face、<a href="https://github.com/huggingface/transformers.js/blob/main/LICENSE" target="_blank" rel="noopener">Apache License 2.0</a>。</li>
+    <li>ライブラリ／モデルの取得元 CDN: <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr</a>・<a href="https://huggingface.co/" target="_blank" rel="noopener">Hugging Face</a>。</li>
+  </ul>
+  <p class="fineprint">各ソフトウェア／モデルの権利は元の権利者に帰属します。利用にあたっては各ライセンスの条件に従ってください。本ツールは認識結果の正確性を保証しません。</p>
+</section>
+
+<footer>
+  すべてブラウザ内で動作 ・ <a href="./next.html" target="_blank" rel="noopener">次の実装項目 →</a>
+</footer>
+
+<script type="module">
+// ===== transformers.js v3 を CDN の ESM から import =====
+// （v3 系の安定版にピン留め。pipeline / env の名前と API は v3 で確認済み）
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
+
+// ローカルモデルは探しに行かず、Hub から取得する（取得＝初回DLのみ）
+env.allowLocalModels = false;
+// ブラウザの Cache Storage を使ってモデルを再利用（2回目以降はDL不要）
+env.useBrowserCache = true;
+
+// ----- 推論パラメータ（定数で切替可能に）-----
+const DTYPE = 'q8';          // 量子化版で初回DLを軽く（webgpuでも可）
+const CHUNK_LENGTH_S = 30;   // 長尺対応：30秒チャンク
+const STRIDE_LENGTH_S = 5;   // チャンク境界の取りこぼし防止
+const TARGET_SR = 16000;     // Whisper は 16kHz モノラル前提
+
+// ----- DOM -----
+const $ = (id) => document.getElementById(id);
+const statusDot = $('statusDot'), statusText = $('statusText');
+const backendText = $('backendText'), modelText = $('modelText');
+const modelSelect = $('modelSelect'), langSelect = $('langSelect');
+const loadBtn = $('loadBtn');
+const progressWrap = $('progressWrap'), progressBar = $('progressBar');
+const progressLabel = $('progressLabel'), progressPct = $('progressPct'), fileList = $('fileList');
+const errBox = $('errBox');
+const fileInput = $('fileInput');
+const recBtn = $('recBtn'), recTime = $('recTime');
+const resultBox = $('resultBox'), copyBtn = $('copyBtn'), clearBtn = $('clearBtn');
+const timingHint = $('timingHint');
+
+let transcriber = null;     // ロード済みパイプライン
+let currentModel = null;    // ロード済みモデルID
+let busy = false;           // 推論/ロード中フラグ
+let backend = 'wasm';       // 'webgpu' or 'wasm'
+
+// ----- 状態表示ヘルパ -----
+function setStatus(kind, text) {
+  statusDot.className = 'dot ' + kind; // idle/loading/busy/ok/err
+  statusText.textContent = text;
+}
+function showError(msg) {
+  errBox.textContent = '⚠️ ' + msg;
+  errBox.classList.add('show');
+}
+function clearError() { errBox.classList.remove('show'); errBox.textContent = ''; }
+
+// ----- バックエンド判定（WebGPU 可否）-----
+async function detectBackend() {
+  if (navigator.gpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) { backend = 'webgpu'; backendText.textContent = 'WebGPU（GPU高速）'; return; }
+    } catch (_) { /* fallthrough */ }
+  }
+  backend = 'wasm';
+  // SharedArrayBuffer（マルチスレッドWASM）には COOP/COEP ヘッダが必要。
+  // ヘッダ無し配信（GitHub Pages / file://）ではシングルスレッドWASMになる。
+  const mt = (typeof SharedArrayBuffer !== 'undefined') ? 'マルチスレッド' : 'シングルスレッド';
+  backendText.textContent = `WASM（${mt}）`;
+}
+
+// ===== モデルのロード（進捗バー + %）=====
+const fileProgress = {}; // file名 -> {loaded,total}
+function renderProgress() {
+  let loaded = 0, total = 0, anyTotal = false;
+  const lines = [];
+  for (const [name, p] of Object.entries(fileProgress)) {
+    loaded += p.loaded || 0;
+    if (p.total) { total += p.total; anyTotal = true; }
+    const pct = p.total ? Math.floor((p.loaded / p.total) * 100) : (p.done ? 100 : 0);
+    lines.push(`<div><span>${name.split('/').pop()}</span><span>${pct}%</span></div>`);
+  }
+  const overall = anyTotal && total > 0 ? Math.min(100, Math.floor((loaded / total) * 100)) : 0;
+  progressBar.style.width = overall + '%';
+  progressPct.textContent = overall + '%';
+  if (anyTotal) {
+    const mb = (loaded / 1048576).toFixed(1) + ' / ' + (total / 1048576).toFixed(1) + ' MB';
+    progressLabel.textContent = 'モデル ダウンロード中… ' + mb;
+  }
+  fileList.innerHTML = lines.join('');
+}
+
+function progressCallback(data) {
+  // data.status: 'initiate' | 'download' | 'progress' | 'done' | 'ready'
+  if (!data || !data.file) return;
+  if (data.status === 'progress') {
+    fileProgress[data.file] = { loaded: data.loaded, total: data.total };
+    renderProgress();
+  } else if (data.status === 'done') {
+    fileProgress[data.file] = { loaded: (fileProgress[data.file]?.total) || 0,
+                                total: (fileProgress[data.file]?.total) || 0, done: true };
+    renderProgress();
+  } else if (data.status === 'initiate') {
+    fileProgress[data.file] = { loaded: 0, total: 0 };
+    renderProgress();
+  }
+}
+
+async function loadModel() {
+  if (busy) return;
+  clearError();
+  const model = modelSelect.value;
+  busy = true;
+  loadBtn.disabled = true; modelSelect.disabled = true;
+  setStatus('loading', 'モデルをロード中…');
+  progressWrap.classList.add('show');
+  for (const k of Object.keys(fileProgress)) delete fileProgress[k];
+  progressBar.style.width = '0%'; progressPct.textContent = '0%';
+  progressLabel.textContent = 'モデル ダウンロード中…';
+
+  try {
+    // device を試す：webgpu → 失敗時 wasm にフォールバック
+    const tryDevices = backend === 'webgpu' ? ['webgpu', 'wasm'] : ['wasm'];
+    let lastErr = null;
+    for (const dev of tryDevices) {
+      try {
+        transcriber = await pipeline('automatic-speech-recognition', model, {
+          device: dev,
+          dtype: DTYPE,
+          progress_callback: progressCallback,
+        });
+        backend = dev;
+        const mt = (dev === 'wasm' && typeof SharedArrayBuffer === 'undefined') ? '（シングルスレッド）' : '';
+        backendText.textContent = dev === 'webgpu' ? 'WebGPU（GPU高速）' : `WASM${mt}`;
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        console.warn(`device=${dev} でのロードに失敗。フォールバックします。`, e);
+      }
+    }
+    if (!transcriber) throw lastErr || new Error('パイプラインの初期化に失敗しました');
+
+    currentModel = model;
+    modelText.textContent = model.split('/').pop();
+    progressBar.style.width = '100%'; progressPct.textContent = '100%';
+    progressLabel.textContent = 'モデル準備完了';
+    setStatus('ok', 'モデル準備完了 — 入力を待機中');
+    loadBtn.textContent = 'モデルを再ロード / 切替';
+  } catch (e) {
+    console.error(e);
+    setStatus('err', 'モデルのロードに失敗');
+    showError('モデルのロードに失敗しました: ' + (e?.message || e));
+    transcriber = null;
+  } finally {
+    busy = false;
+    loadBtn.disabled = false; modelSelect.disabled = false;
+    updateControls();
+  }
+}
+
+// ===== 音声デコード + 16kHzモノラルへリサンプリング =====
+async function blobToMono16k(blob) {
+  const arrayBuf = await blob.arrayBuffer();
+  // まず任意サンプルレートでデコード
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const tmpCtx = new AC();
+  let decoded;
+  try {
+    decoded = await tmpCtx.decodeAudioData(arrayBuf.slice(0));
+  } finally {
+    tmpCtx.close();
+  }
+  // OfflineAudioContext で 16kHz・モノラルにレンダリング（=リサンプリング）
+  const duration = decoded.duration;
+  const frames = Math.max(1, Math.ceil(duration * TARGET_SR));
+  const offline = new OfflineAudioContext(1, frames, TARGET_SR);
+  const src = offline.createBufferSource();
+  src.buffer = decoded;
+  src.connect(offline.destination);
+  src.start(0);
+  const rendered = await offline.startRendering();
+  return rendered.getChannelData(0); // Float32Array @16kHz mono
+}
+
+// ===== 文字起こし実行 =====
+async function transcribe(float32) {
+  if (!transcriber) { showError('先にモデルをロードしてください。'); return; }
+  if (busy) return;
+  busy = true; clearError();
+  setStatus('busy', '推論中…（端末内で処理しています）');
+  updateControls();
+  const t0 = performance.now();
+  try {
+    const lang = langSelect.value; // '' は自動判定
+    const opts = {
+      task: 'transcribe',
+      chunk_length_s: CHUNK_LENGTH_S,
+      stride_length_s: STRIDE_LENGTH_S,
+      return_timestamps: false,
+    };
+    if (lang) opts.language = lang;
+
+    const output = await transcriber(float32, opts);
+    const text = (output && output.text ? output.text : '').trim();
+    setResult(text || '（無音、または認識できる音声がありませんでした）');
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    timingHint.textContent = `処理時間: ${secs}s ・ バックエンド: ${backend} ・ 音声長: ${(float32.length / TARGET_SR).toFixed(1)}s`;
+    setStatus('ok', '完了');
+  } catch (e) {
+    console.error(e);
+    setStatus('err', '推論に失敗');
+    showError('文字起こしに失敗しました: ' + (e?.message || e));
+  } finally {
+    busy = false;
+    updateControls();
+  }
+}
+
+function setResult(text) {
+  resultBox.textContent = text;
+  resultBox.classList.toggle('empty', !text);
+  const has = !!text && !resultBox.classList.contains('empty');
+  copyBtn.disabled = !has;
+  clearBtn.disabled = !has;
+}
+
+// ===== ファイル入力 =====
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (!transcriber) { showError('先に「モデルをロード」を押してください。'); fileInput.value = ''; return; }
+  try {
+    setStatus('busy', '音声を変換中…');
+    const mono = await blobToMono16k(file);
+    await transcribe(mono);
+  } catch (err) {
+    console.error(err);
+    setStatus('err', '音声の読み込みに失敗');
+    showError('この音声ファイルを読み込めませんでした（対応外の形式の可能性）: ' + (err?.message || err));
+  } finally {
+    fileInput.value = '';
+  }
+});
+
+// ===== マイク録音（MediaRecorder）=====
+let mediaRecorder = null, chunks = [], stream = null;
+let recTimer = null, recStart = 0, recording = false;
+
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${m}:${ss}`;
+}
+
+async function startRecording() {
+  if (!transcriber) { showError('先に「モデルをロード」を押してください。'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showError('このブラウザはマイク録音（getUserMedia）に対応していません。'); return;
+  }
+  clearError();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+      showError('マイクの使用が拒否されました。ブラウザの権限設定で許可してください。');
+    } else if (err && err.name === 'NotFoundError') {
+      showError('マイクが見つかりませんでした。デバイスを確認してください。');
+    } else {
+      showError('マイクを起動できませんでした: ' + (err?.message || err));
+    }
+    return;
+  }
+  chunks = [];
+  try {
+    mediaRecorder = new MediaRecorder(stream);
+  } catch (err) {
+    showError('録音を開始できませんでした（MediaRecorder 非対応の可能性）: ' + (err?.message || err));
+    stream.getTracks().forEach(t => t.stop());
+    return;
+  }
+  mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+  mediaRecorder.onstop = async () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+    try {
+      setStatus('busy', '録音を変換中…');
+      const mono = await blobToMono16k(blob);
+      await transcribe(mono);
+    } catch (err) {
+      console.error(err);
+      setStatus('err', '録音の処理に失敗');
+      showError('録音音声の処理に失敗しました: ' + (err?.message || err));
+    }
+  };
+  mediaRecorder.start();
+  recording = true;
+  recStart = Date.now();
+  recBtn.textContent = '■ 停止して文字起こし';
+  recBtn.classList.add('recording');
+  recTimer = setInterval(() => { recTime.textContent = fmtTime(Date.now() - recStart); }, 250);
+  setStatus('busy', '録音中…');
+}
+
+function stopRecording() {
+  if (!recording) return;
+  recording = false;
+  clearInterval(recTimer);
+  recBtn.textContent = '● 録音開始';
+  recBtn.classList.remove('recording');
+  recTime.textContent = '00:00';
+  try { mediaRecorder && mediaRecorder.stop(); } catch (_) {}
+}
+
+recBtn.addEventListener('click', () => {
+  if (busy && !recording) return;
+  if (recording) stopRecording(); else startRecording();
+});
+
+// ===== 結果アクション =====
+copyBtn.addEventListener('click', async () => {
+  const text = resultBox.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    copyBtn.textContent = 'コピーしました ✓';
+    setTimeout(() => copyBtn.textContent = 'コピー', 1400);
+  } catch (_) {
+    // フォールバック
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); copyBtn.textContent = 'コピーしました ✓'; setTimeout(() => copyBtn.textContent = 'コピー', 1400); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+});
+clearBtn.addEventListener('click', () => {
+  setResult('');
+  resultBox.textContent = 'ここに結果が表示されます。';
+  resultBox.classList.add('empty');
+  timingHint.textContent = '';
+});
+
+// ===== コントロール活性制御 =====
+function updateControls() {
+  const ready = !!transcriber && !busy;
+  fileInput.disabled = !ready;
+  recBtn.disabled = (!transcriber) || (busy && !recording);
+}
+
+loadBtn.addEventListener('click', loadModel);
+
+// ===== 初期化 =====
+(async function init() {
+  setStatus('idle', 'モデル未ロード');
+  setResult('');
+  resultBox.textContent = 'ここに結果が表示されます。';
+  resultBox.classList.add('empty');
+  await detectBackend();
+  updateControls();
+})();
+</script>
+</body>
+</html>

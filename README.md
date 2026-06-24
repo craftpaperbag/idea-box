@@ -10,6 +10,7 @@
 | 室温ジャッジ | 今の体の感覚をぽちぽちタップすると、寒い・暑いを判定してアドバイスする | <a href="https://craftpaperbag.github.io/idea-box/room-temp-judge/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/room-temp-judge/next.html" target="_blank" rel="noopener">next</a> |
 | ねむりスイッチ | 今寝ると何時間眠れるかを示し、呼吸ガイドと言い訳で寝るきっかけをくれる | <a href="https://craftpaperbag.github.io/idea-box/sleep-nudge/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/sleep-nudge/next.html" target="_blank" rel="noopener">next</a> |
 | 10Xの問い | いまの目標に「桁違い」を持ち込む問いをカードで引き、気づきをログに残す | <a href="https://craftpaperbag.github.io/idea-box/10x-questions/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/10x-questions/next.html" target="_blank" rel="noopener">next</a> |
+| 音声文字起こし | マイク/音声ファイルをWhisperで端末内文字起こし。音声は外部送信しない（初回のみモデルDL） | <a href="https://craftpaperbag.github.io/idea-box/voice-transcribe/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/voice-transcribe/next.html" target="_blank" rel="noopener">next</a> |
 
 ## License
 
