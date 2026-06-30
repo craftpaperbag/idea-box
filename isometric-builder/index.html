@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>アイソメ・ビルダー — ブロックを積んでSVGに</title>
+<style>
+  :root{
+    --bg:#eef1f7; --panel:#ffffff; --ink:#1f2733; --sub:#6b7686;
+    --line:#e2e6ef; --accent:#5b67ff; --shadow:0 6px 20px rgba(31,39,51,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+  }
+  header{
+    padding:10px 14px; display:flex; align-items:center; gap:10px;
+    background:var(--panel); border-bottom:1px solid var(--line); flex:0 0 auto;
+  }
+  header h1{font-size:16px; margin:0; letter-spacing:.02em}
+  header .tag{font-size:11px;color:var(--sub);font-weight:500}
+  header .spacer{flex:1}
+  .icon-btn{
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1;
+    transition:.12s; user-select:none;
+  }
+  .icon-btn:active{transform:translateY(1px)}
+  .icon-btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .icon-btn:disabled{opacity:.4; cursor:default}
+
+  .stage-wrap{flex:1 1 auto; position:relative; overflow:auto; -webkit-overflow-scrolling:touch}
+  .stage{min-width:100%; min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px}
+  svg{display:block; background:
+      radial-gradient(circle at 50% 38%, #ffffff 0%, #e9edf6 70%, #dfe4ef 100%);
+      border-radius:18px; box-shadow:var(--shadow); touch-action:manipulation}
+  svg polygon{cursor:pointer}
+
+  .toolbar{
+    flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .seg{display:inline-flex; background:#f0f2f8; border-radius:11px; padding:3px; gap:3px}
+  .seg button{
+    border:0; background:transparent; padding:7px 14px; border-radius:9px;
+    font-size:13px; font-weight:600; color:var(--sub); cursor:pointer; transition:.12s;
+  }
+  .seg button.on{background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+  .swatches{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+  .swatch{
+    width:30px; height:30px; border-radius:9px; cursor:pointer; border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--line); transition:.12s; position:relative;
+  }
+  .swatch.on{box-shadow:0 0 0 2px var(--ink); transform:scale(1.08)}
+  .swatch.custom{display:inline-flex;align-items:center;justify-content:center;overflow:hidden}
+  .swatch.custom input{position:absolute; inset:-6px; width:140%; height:140%; border:0; padding:0; cursor:pointer; opacity:0}
+  .swatch.custom span{font-size:15px;pointer-events:none}
+
+  .grow{flex:1}
+  .mini{font-size:11px; color:var(--sub)}
+  select{font:inherit; padding:7px 9px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink)}
+  .zoom{display:inline-flex; align-items:center; gap:6px}
+  .hint{font-size:11.5px; color:var(--sub); text-align:center}
+  a.link{color:var(--accent); font-weight:600; text-decoration:none}
+</style>
+</head>
+<body>
+  <header>
+    <h1>◈ アイソメ・ビルダー</h1>
+    <span class="tag">ブロックを積んでSVG出力</span>
+    <span class="spacer"></span>
+    <a class="icon-btn" href="./next.html" target="_blank" rel="noopener">次の実装 →</a>
+  </header>
+
+  <div class="stage-wrap">
+    <div class="stage">
+      <svg id="art" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="row">
+      <div class="seg" id="tools">
+        <button data-tool="paint" class="on">🧱 積む</button>
+        <button data-tool="erase">⌫ 消す</button>
+      </div>
+      <div class="zoom">
+        <button class="icon-btn" id="zout">－</button>
+        <span class="mini" id="zlabel">100%</span>
+        <button class="icon-btn" id="zin">＋</button>
+      </div>
+      <span class="grow"></span>
+      <label class="mini">グリッド
+        <select id="gridsel">
+          <option value="6">6×6</option>
+          <option value="8" selected>8×8</option>
+          <option value="10">10×10</option>
+          <option value="12">12×12</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="row swatches" id="swatches"></div>
+
+    <div class="row">
+      <button class="icon-btn" id="undo">↶ 元に戻す</button>
+      <button class="icon-btn" id="sample">✦ サンプル</button>
+      <button class="icon-btn" id="clear">🗑 全消去</button>
+      <span class="grow"></span>
+      <button class="icon-btn primary" id="dl">⬇ SVGダウンロード</button>
+    </div>
+    <p class="hint">タップでブロックを積む／同じ場所をタップで上に重ねる。長押し（PC右クリック）で1個消す。</p>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  const SVGNS="http://www.w3.org/2000/svg";
+  const TW=60, TH=30, CUBE=30;          // tile width, tile height, cube side height (user units)
+  const MAX_H=14;                       // max stack height
+  const STORE="iso-builder-v1";
+
+  const PALETTE=["#ff5a5f","#ff9f43","#ffd166","#2ec27e","#19c3c3",
+                 "#3aa0ff","#7c5cff","#ff7ac6","#3e4a5b","#cfd8e6"];
+
+  const state={ cols:8, rows:8, cells:{}, color:PALETTE[5], tool:"paint", zoom:1 };
+  let history=[];
+
+  const art=document.getElementById("art");
+
+  /* ---------- helpers ---------- */
+  function key(x,y){return x+","+y;}
+  function shade(hex,f){
+    const n=parseInt(hex.slice(1),16);
+    let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    r=Math.round(r*f); g=Math.round(g*f); b=Math.round(b*f);
+    return "#"+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("");
+  }
+  function snapshot(){return JSON.stringify({cols:state.cols,rows:state.rows,cells:state.cells});}
+  function pushHistory(){history.push(snapshot()); if(history.length>60)history.shift();}
+  function save(){try{localStorage.setItem(STORE,snapshot());}catch(e){}}
+  function load(){
+    try{
+      const raw=localStorage.getItem(STORE); if(!raw)return false;
+      const d=JSON.parse(raw);
+      state.cols=d.cols||8; state.rows=d.rows||8; state.cells=d.cells||{};
+      return true;
+    }catch(e){return false;}
+  }
+
+  /* ---------- geometry / render ---------- */
+  function render(){
+    // clear
+    while(art.firstChild) art.removeChild(art.firstChild);
+
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    const parts=[];
+    const origin={x:0,y:0};
+
+    function basePt(gx,gy,level){
+      return {x:(gx-gy)*(TW/2), y:(gx+gy)*(TH/2) - level*CUBE};
+    }
+    function track(pts){for(const p of pts){if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;}}
+    function poly(pts,fill,stroke,data){
+      track(pts);
+      const ps=pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+      let attr=`points="${ps}" fill="${fill}"`;
+      if(stroke)attr+=` stroke="${stroke}" stroke-width="1" stroke-linejoin="round"`;
+      if(data)attr+=` data-gx="${data.x}" data-gy="${data.y}"`;
+      parts.push(`<polygon ${attr}/>`);
+    }
+
+    // ground tiles (back to front)
+    for(let s=0;s<=state.cols+state.rows;s++){
+      for(let gx=0;gx<state.cols;gx++){
+        const gy=s-gx; if(gy<0||gy>=state.rows)continue;
+        const b=basePt(gx,gy,0);
+        const top=[
+          {x:b.x,y:b.y},{x:b.x+TW/2,y:b.y+TH/2},
+          {x:b.x,y:b.y+TH},{x:b.x-TW/2,y:b.y+TH/2}
+        ];
+        poly(top,"#f3f6fc","#dde3ef",{x:gx,y:gy});
+      }
+    }
+
+    // cubes, painter order: by (gx+gy) asc, then level asc
+    for(let s=0;s<=state.cols+state.rows;s++){
+      for(let gx=0;gx<state.cols;gx++){
+        const gy=s-gx; if(gy<0||gy>=state.rows)continue;
+        const stack=state.cells[key(gx,gy)]; if(!stack||!stack.length)continue;
+        for(let lv=0;lv<stack.length;lv++){
+          const c=stack[lv];
+          const b=basePt(gx,gy,lv);
+          // top face
+          const top=[
+            {x:b.x,y:b.y},{x:b.x+TW/2,y:b.y+TH/2},
+            {x:b.x,y:b.y+TH},{x:b.x-TW/2,y:b.y+TH/2}
+          ];
+          // left face (front-left, darker)
+          const left=[
+            {x:b.x-TW/2,y:b.y+TH/2},{x:b.x,y:b.y+TH},
+            {x:b.x,y:b.y+TH+CUBE},{x:b.x-TW/2,y:b.y+TH/2+CUBE}
+          ];
+          // right face (front-right, medium)
+          const right=[
+            {x:b.x,y:b.y+TH},{x:b.x+TW/2,y:b.y+TH/2},
+            {x:b.x+TW/2,y:b.y+TH/2+CUBE},{x:b.x,y:b.y+TH+CUBE}
+          ];
+          const st=shade(c,0.55);
+          poly(left, shade(c,0.62), st, {x:gx,y:gy});
+          poly(right,shade(c,0.80), st, {x:gx,y:gy});
+          poly(top,  c,              st, {x:gx,y:gy});
+        }
+      }
+    }
+
+    if(minX===Infinity){minX=-TW;minY=-TH;maxX=TW;maxY=TH;}
+    const pad=22;
+    const vx=minX-pad, vy=minY-pad, vw=(maxX-minX)+pad*2, vh=(maxY-minY)+pad*2;
+    art.setAttribute("viewBox",`${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
+    art.setAttribute("width",(vw*state.zoom).toFixed(0));
+    art.setAttribute("height",(vh*state.zoom).toFixed(0));
+    art.innerHTML=parts.join("");
+  }
+
+  /* ---------- mutations ---------- */
+  function addCube(gx,gy){
+    const k=key(gx,gy); const st=state.cells[k]||(state.cells[k]=[]);
+    if(st.length>=MAX_H)return;
+    pushHistory(); st.push(state.color); render(); save(); updateBtns();
+  }
+  function removeTop(gx,gy){
+    const k=key(gx,gy); const st=state.cells[k];
+    if(!st||!st.length)return;
+    pushHistory(); st.pop(); if(!st.length)delete state.cells[k];
+    render(); save(); updateBtns();
+  }
+  function undo(){
+    if(!history.length)return;
+    const prev=JSON.parse(history.pop());
+    state.cols=prev.cols; state.rows=prev.rows; state.cells=prev.cells;
+    document.getElementById("gridsel").value=String(state.cols);
+    render(); save(); updateBtns();
+  }
+  function clearAll(){
+    if(!Object.keys(state.cells).length)return;
+    pushHistory(); state.cells={}; render(); save(); updateBtns();
+  }
+
+  /* ---------- interaction ---------- */
+  let pressTimer=null, longPressed=false;
+  art.addEventListener("click",e=>{
+    if(longPressed){longPressed=false;return;}
+    const el=e.target.closest("[data-gx]"); if(!el)return;
+    const gx=+el.dataset.gx, gy=+el.dataset.gy;
+    state.tool==="erase"?removeTop(gx,gy):addCube(gx,gy);
+  });
+  art.addEventListener("contextmenu",e=>{
+    const el=e.target.closest("[data-gx]"); if(!el)return;
+    e.preventDefault(); removeTop(+el.dataset.gx,+el.dataset.gy);
+  });
+  // long-press to erase (mobile)
+  art.addEventListener("touchstart",e=>{
+    const el=e.target.closest("[data-gx]"); if(!el)return;
+    longPressed=false;
+    pressTimer=setTimeout(()=>{longPressed=true; removeTop(+el.dataset.gx,+el.dataset.gy);},480);
+  },{passive:true});
+  ["touchend","touchmove","touchcancel"].forEach(ev=>art.addEventListener(ev,()=>{clearTimeout(pressTimer);},{passive:true}));
+
+  /* ---------- UI wiring ---------- */
+  function buildSwatches(){
+    const wrap=document.getElementById("swatches"); wrap.innerHTML="";
+    PALETTE.forEach(c=>{
+      const d=document.createElement("div");
+      d.className="swatch"+(c===state.color?" on":""); d.style.background=c;
+      d.onclick=()=>{state.color=c; document.getElementById("tools").querySelector('[data-tool="paint"]').click(); markSwatches();};
+      wrap.appendChild(d);
+    });
+    // custom color
+    const cw=document.createElement("label"); cw.className="swatch custom"; cw.style.background="conic-gradient(#ff5a5f,#ffd166,#2ec27e,#3aa0ff,#7c5cff,#ff5a5f)";
+    const sp=document.createElement("span"); sp.textContent="🎨";
+    const inp=document.createElement("input"); inp.type="color"; inp.value=state.color;
+    inp.oninput=()=>{state.color=inp.value; setTool("paint"); markSwatches();};
+    cw.appendChild(inp); cw.appendChild(sp); wrap.appendChild(cw);
+  }
+  function markSwatches(){
+    document.querySelectorAll("#swatches .swatch").forEach(s=>{
+      if(s.classList.contains("custom"))return;
+      s.classList.toggle("on", rgbEq(s.style.background,state.color));
+    });
+  }
+  function rgbEq(bg,hex){
+    const m=bg.match(/\d+/g); if(!m)return false;
+    const h="#"+m.slice(0,3).map(v=>(+v).toString(16).padStart(2,"0")).join("");
+    return h.toLowerCase()===hex.toLowerCase();
+  }
+  function setTool(t){
+    state.tool=t;
+    document.querySelectorAll("#tools button").forEach(b=>b.classList.toggle("on",b.dataset.tool===t));
+  }
+  document.getElementById("tools").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b)return; setTool(b.dataset.tool);
+  });
+  document.getElementById("gridsel").addEventListener("change",e=>{
+    pushHistory();
+    const n=+e.target.value; state.cols=n; state.rows=n;
+    // drop cells outside new grid
+    Object.keys(state.cells).forEach(k=>{const[x,y]=k.split(",").map(Number); if(x>=n||y>=n)delete state.cells[k];});
+    render(); save(); updateBtns();
+  });
+  function setZoom(z){state.zoom=Math.max(0.4,Math.min(2.4,z)); document.getElementById("zlabel").textContent=Math.round(state.zoom*100)+"%"; render();}
+  document.getElementById("zin").onclick=()=>setZoom(state.zoom*1.2);
+  document.getElementById("zout").onclick=()=>setZoom(state.zoom/1.2);
+  document.getElementById("undo").onclick=undo;
+  document.getElementById("clear").onclick=clearAll;
+  document.getElementById("sample").onclick=()=>{pushHistory(); loadSample(); render(); save(); updateBtns();};
+  document.getElementById("dl").onclick=download;
+
+  function updateBtns(){
+    document.getElementById("undo").disabled=!history.length;
+    document.getElementById("clear").disabled=!Object.keys(state.cells).length;
+  }
+
+  /* ---------- sample scene ---------- */
+  function loadSample(){
+    state.cols=8; state.rows=8; state.cells={};
+    document.getElementById("gridsel").value="8";
+    const put=(x,y,arr)=>{state.cells[key(x,y)]=arr.slice();};
+    const G="#2ec27e",B="#3aa0ff",Y="#ffd166",R="#ff5a5f",P="#7c5cff",W="#cfd8e6";
+    // a little house + garden
+    put(2,2,[G]); put(3,2,[G,W]); put(4,2,[G]);
+    put(2,3,[G,W]); put(3,3,[B,B,R]); put(4,3,[G,W]);
+    put(2,4,[G]); put(3,4,[G,W]); put(4,4,[G]);
+    put(5,3,[Y]); put(5,4,[Y,Y]); put(5,5,[Y,Y,P]);
+    put(1,1,[G]); put(6,6,[B,B]);
+  }
+
+  /* ---------- download ---------- */
+  function download(){
+    const clone=art.cloneNode(true);
+    const vb=art.getAttribute("viewBox").split(" ").map(Number);
+    clone.setAttribute("width",vb[2].toFixed(0));
+    clone.setAttribute("height",vb[3].toFixed(0));
+    clone.removeAttribute("style");
+    // strip editor-only data attrs
+    clone.querySelectorAll("[data-gx]").forEach(p=>{p.removeAttribute("data-gx");p.removeAttribute("data-gy");});
+    const xml='<?xml version="1.0" encoding="UTF-8"?>\n'+clone.outerHTML;
+    const blob=new Blob([xml],{type:"image/svg+xml"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download="isometric-"+Date.now()+".svg";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
+  /* ---------- init ---------- */
+  buildSwatches();
+  if(load()){document.getElementById("gridsel").value=String(state.cols);}
+  else{loadSample();}
+  render(); updateBtns();
+})();
+</script>
+</body>
+</html>
