@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0f1220" />
+<title>休憩ヒートマップ</title>
+<style>
+  :root {
+    --bg: #0f1220;
+    --panel: #191d31;
+    --panel-2: #21263f;
+    --ink: #eef1ff;
+    --muted: #9aa2c4;
+    --line: #2b3150;
+    --accent: #5eead4;
+    --accent-strong: #2dd4bf;
+    --shadow: 0 18px 40px rgba(0,0,0,.35);
+    /* heat scale (teal) */
+    --h0: #21263f;
+    --h1: #16463f;
+    --h2: #1c6b5c;
+    --h3: #2a9d84;
+    --h4: #5eead4;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(120% 90% at 50% -10%, #1a2036 0%, var(--bg) 55%) fixed;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    min-height: 100dvh;
+    padding: max(18px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+
+  header { text-align: center; margin: 4px 0 2px; }
+  h1 { font-size: 1.32rem; margin: 0; letter-spacing: .02em; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: .86rem; }
+
+  /* ---- one-tap button ---- */
+  .tapzone { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .bigbtn {
+    appearance: none; border: none; cursor: pointer;
+    width: 200px; height: 200px; border-radius: 50%;
+    background:
+      radial-gradient(120% 120% at 30% 25%, #3ee0c6 0%, #2dd4bf 45%, #14b8a6 100%);
+    color: #06231f; font-weight: 800; font-size: 1.18rem; letter-spacing: .04em;
+    box-shadow: 0 20px 44px rgba(45,212,191,.38), inset 0 -8px 20px rgba(0,0,0,.16);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; transition: transform .12s ease, box-shadow .12s ease;
+    position: relative; overflow: hidden;
+  }
+  .bigbtn:active { transform: scale(.95); box-shadow: 0 10px 26px rgba(45,212,191,.34) inset, 0 8px 20px rgba(45,212,191,.28); }
+  .bigbtn .emoji { font-size: 2.6rem; line-height: 1; }
+  .bigbtn small { font-weight: 600; font-size: .74rem; opacity: .72; }
+  .bigbtn.pulse { animation: pulse .5s ease; }
+  @keyframes pulse { 0%{transform:scale(1);} 40%{transform:scale(1.06);} 100%{transform:scale(1);} }
+  .ripple { position:absolute; border-radius:50%; background: rgba(255,255,255,.55); transform: translate(-50%,-50%) scale(0); animation: ripple .6s ease-out; pointer-events:none; }
+  @keyframes ripple { to { transform: translate(-50%,-50%) scale(6); opacity:0; } }
+
+  .justtapped { color: var(--accent); font-size: .9rem; min-height: 1.2em; font-weight: 600; }
+
+  /* ---- stats row ---- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 12px 8px; text-align: center;
+  }
+  .stat b { display: block; font-size: 1.5rem; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: .72rem; }
+
+  /* ---- cards ---- */
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 16px; width: 100%; box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: .95rem; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .sub { color: var(--muted); font-weight: 500; font-size: .74rem; margin-left: auto; }
+
+  /* ---- calendar heatmap ---- */
+  .cal-scroll { overflow-x: auto; padding-bottom: 4px; }
+  .cal { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+  .cell {
+    width: 15px; height: 15px; border-radius: 4px; background: var(--h0);
+    outline: 1px solid rgba(255,255,255,.03);
+  }
+  .cell.today { box-shadow: 0 0 0 2px var(--accent); }
+  .legend { display: flex; align-items: center; gap: 6px; justify-content: flex-end; margin-top: 10px; color: var(--muted); font-size: .72rem; }
+  .legend .cell { width: 12px; height: 12px; }
+
+  /* ---- clock heatmap ---- */
+  .clock { display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; }
+  .hcell {
+    aspect-ratio: 1; border-radius: 6px; background: var(--h0);
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: .58rem; color: rgba(255,255,255,.55); padding-bottom: 2px;
+    outline: 1px solid rgba(255,255,255,.03);
+  }
+  .clock-note { color: var(--muted); font-size: .74rem; margin: 10px 0 0; }
+
+  .empty { color: var(--muted); font-size: .84rem; text-align: center; padding: 10px 0; }
+
+  footer { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 2px; }
+  footer a, .ghost {
+    color: var(--muted); font-size: .8rem; text-decoration: none; background: none; border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  }
+  footer a:active, .ghost:active { color: var(--ink); }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 10px 16px; border-radius: 999px; font-size: .85rem; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; box-shadow: var(--shadow); z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <div class="wrap" style="display:flex; flex-direction:column; align-items:center; gap:18px;">
+    <header>
+      <h1>☕ 休憩ヒートマップ</h1>
+      <p>ひと休みしたら、真ん中をタップするだけ。</p>
+    </header>
+
+    <div class="tapzone">
+      <button class="bigbtn" id="tapBtn" aria-label="休憩を記録">
+        <span class="emoji">☕</span>
+        休憩した
+        <small>タップで1回記録</small>
+      </button>
+      <div class="justtapped" id="justTapped"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="stToday">0</b><span>今日</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>連続日数</span></div>
+      <div class="stat"><b id="stTotal">0</b><span>累計</span></div>
+    </div>
+
+    <div class="card">
+      <h2>📅 日ごとの休憩量 <span class="sub" id="calRange"></span></h2>
+      <div class="cal-scroll">
+        <div class="cal" id="cal"></div>
+      </div>
+      <div class="legend">
+        少 <span class="cell" style="background:var(--h1)"></span>
+        <span class="cell" style="background:var(--h2)"></span>
+        <span class="cell" style="background:var(--h3)"></span>
+        <span class="cell" style="background:var(--h4)"></span> 多
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🕐 時間帯のクセ <span class="sub">24時間</span></h2>
+      <div class="clock" id="clock"></div>
+      <p class="clock-note" id="clockNote"></p>
+    </div>
+
+    <footer>
+      <a href="./next.html" target="_blank" rel="noopener">次の実装 →</a>
+      <button class="ghost" id="undoBtn">直前を取り消す</button>
+      <button class="ghost" id="resetBtn">全部消す</button>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "break-heatmap.v1";
+  var breaks = load();          // array of epoch ms
+  var HEAT = ["--h0","--h1","--h2","--h3","--h4"];
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(function (n) { return typeof n === "number"; }) : [];
+    } catch (e) { return []; }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(breaks)); } catch (e) {}
+  }
+
+  function dayKey(d) {
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  // ---- record a break ----
+  var tapBtn = document.getElementById("tapBtn");
+  var justTapped = document.getElementById("justTapped");
+
+  tapBtn.addEventListener("click", function (e) {
+    var now = Date.now();
+    breaks.push(now);
+    save();
+    // haptic + visual feedback
+    if (navigator.vibrate) { try { navigator.vibrate(18); } catch (er) {} }
+    tapBtn.classList.remove("pulse"); void tapBtn.offsetWidth; tapBtn.classList.add("pulse");
+    addRipple(e);
+    var t = new Date(now);
+    justTapped.textContent = "記録しました  " + pad(t.getHours()) + ":" + pad(t.getMinutes());
+    render();
+  });
+
+  function addRipple(e) {
+    var r = document.createElement("span");
+    r.className = "ripple";
+    var rect = tapBtn.getBoundingClientRect();
+    r.style.left = ((e.clientX || rect.left + rect.width / 2) - rect.left) + "px";
+    r.style.top = ((e.clientY || rect.top + rect.height / 2) - rect.top) + "px";
+    r.style.width = r.style.height = "26px";
+    tapBtn.appendChild(r);
+    setTimeout(function () { r.remove(); }, 620);
+  }
+
+  // ---- undo / reset ----
+  document.getElementById("undoBtn").addEventListener("click", function () {
+    if (!breaks.length) { toast("消せる記録がありません"); return; }
+    breaks.pop(); save(); render(); toast("直前の1件を取り消しました");
+    justTapped.textContent = "";
+  });
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (!breaks.length) { toast("記録はまだありません"); return; }
+    if (!confirm("すべての休憩記録を削除します。よろしいですか？")) return;
+    breaks = []; save(); render(); toast("すべて削除しました");
+    justTapped.textContent = "";
+  });
+
+  // ---- stats ----
+  function computeStats() {
+    var today = startOfDay(new Date());
+    var byDay = {};
+    for (var i = 0; i < breaks.length; i++) {
+      var k = dayKey(new Date(breaks[i]));
+      byDay[k] = (byDay[k] || 0) + 1;
+    }
+    var todayCount = byDay[dayKey(today)] || 0;
+
+    // streak: consecutive days (ending today or yesterday) with >=1 break
+    var streak = 0;
+    var cursor = new Date(today);
+    // allow streak to count even if none today yet, starting from yesterday
+    if (!byDay[dayKey(cursor)]) { cursor.setDate(cursor.getDate() - 1); }
+    while (byDay[dayKey(cursor)]) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return { today: todayCount, streak: streak, total: breaks.length, byDay: byDay };
+  }
+
+  // ---- calendar heatmap (last 15 weeks) ----
+  var WEEKS = 15;
+  function renderCalendar(byDay) {
+    var cal = document.getElementById("cal");
+    cal.innerHTML = "";
+    var today = startOfDay(new Date());
+    // find the Sunday on/after today to fill the last column, then go back
+    var end = new Date(today);
+    end.setDate(end.getDate() + (6 - end.getDay())); // saturday of this week
+    var start = new Date(end);
+    start.setDate(start.getDate() - (WEEKS * 7 - 1));
+
+    var max = 1;
+    for (var kk in byDay) { if (byDay[kk] > max) max = byDay[kk]; }
+
+    var d = new Date(start);
+    var firstMonth = null;
+    for (var n = 0; n < WEEKS * 7; n++) {
+      var cell = document.createElement("div");
+      cell.className = "cell";
+      var future = d > today;
+      var c = future ? 0 : (byDay[dayKey(d)] || 0);
+      cell.style.background = "var(" + HEAT[level(c, max)] + ")";
+      if (future) cell.style.opacity = "0.25";
+      if (dayKey(d) === dayKey(today)) cell.classList.add("today");
+      var label = d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + " ・ " + c + "回";
+      cell.title = label;
+      if (firstMonth === null) firstMonth = d.getMonth() + 1;
+      cal.appendChild(cell);
+      d.setDate(d.getDate() + 1);
+    }
+    document.getElementById("calRange").textContent =
+      (start.getMonth() + 1) + "/" + start.getDate() + " 〜 今日";
+  }
+
+  function level(count, max) {
+    if (count <= 0) return 0;
+    if (max <= 1) return 4;
+    var q = count / max;
+    if (q <= 0.25) return 1;
+    if (q <= 0.5) return 2;
+    if (q <= 0.75) return 3;
+    return 4;
+  }
+
+  // ---- clock heatmap (24 hours) ----
+  function renderClock() {
+    var clock = document.getElementById("clock");
+    clock.innerHTML = "";
+    var buckets = new Array(24).fill(0);
+    for (var i = 0; i < breaks.length; i++) {
+      buckets[new Date(breaks[i]).getHours()]++;
+    }
+    var max = Math.max.apply(null, buckets.concat([1]));
+    for (var h = 0; h < 24; h++) {
+      var cell = document.createElement("div");
+      cell.className = "hcell";
+      cell.style.background = "var(" + HEAT[level(buckets[h], max)] + ")";
+      cell.textContent = h;
+      cell.title = pad(h) + ":00〜  " + buckets[h] + "回";
+      clock.appendChild(cell);
+    }
+    // note the peak hour
+    var note = document.getElementById("clockNote");
+    if (!breaks.length) { note.textContent = "まだデータがありません。休憩したらここに時間帯のクセが出ます。"; return; }
+    var peak = 0;
+    for (var j = 0; j < 24; j++) { if (buckets[j] > buckets[peak]) peak = j; }
+    note.textContent = "よく休むのは " + pad(peak) + ":00 台（" + buckets[peak] + "回）。上段=午前、下段=午後。";
+  }
+
+  // ---- helpers ----
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1800);
+  }
+
+  function render() {
+    var s = computeStats();
+    document.getElementById("stToday").textContent = s.today;
+    document.getElementById("stStreak").textContent = s.streak;
+    document.getElementById("stTotal").textContent = s.total;
+    renderCalendar(s.byDay);
+    renderClock();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

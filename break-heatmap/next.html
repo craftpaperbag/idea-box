@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>休憩ヒートマップ — 次の実装</title>
+<style>
+  :root { --bg:#0f1220; --panel:#191d31; --ink:#eef1ff; --muted:#9aa2c4; --line:#2b3150; --accent:#2dd4bf; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background: radial-gradient(120% 90% at 50% -10%, #1a2036 0%, var(--bg) 55%) fixed;
+    color: var(--ink); font-family: system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+    padding: 28px 16px 60px; line-height: 1.6;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  .lead { color: var(--muted); font-size: .9rem; margin: 0 0 22px; }
+  .item {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px 18px; margin: 0 0 14px; box-shadow: 0 14px 30px rgba(0,0,0,.28);
+  }
+  .item h2 { font-size: 1.02rem; margin: 0 0 6px; display:flex; align-items:baseline; gap:10px; }
+  .pri { font-size: .68rem; font-weight: 700; color:#06231f; background: var(--accent);
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .why { color: var(--muted); font-size: .86rem; margin: 6px 0 0; }
+  .why b { color: var(--ink); font-weight: 600; }
+  a { color: var(--accent); }
+  .back { display:inline-block; margin-top: 18px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--line); padding: 8px 16px; border-radius: 999px; font-size: .85rem; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>休憩ヒートマップ — 次の実装</h1>
+    <p class="lead">「1タップで終わる」を壊さない範囲で、見える化を深める順に並べました。</p>
+
+    <div class="item">
+      <h2><span class="pri">優先度 1</span>タップ即戻し（Undo通知）</h2>
+      <p class="why"><b>なぜ次か：</b>1タップ運用では誤タップが必ず起きる。記録直後に「取り消す」を数秒だけ出せば、下部ボタンを探さずワンタップで戻せて、気軽さが保てる。</p>
+    </div>
+
+    <div class="item">
+      <h2><span class="pri">優先度 2</span>休憩の“質”を後付けタグ（任意・1タップ）</h2>
+      <p class="why"><b>なぜ次か：</b>今は回数だけ。記録後に「☕/🚶/🧘/🍚」を任意で1つ選べると、ヒートマップを種類で色分けでき、"どんな休憩が効いているか"まで見える。あくまで任意なので基本フローは1タップのまま。</p>
+    </div>
+
+    <div class="item">
+      <h2><span class="pri">優先度 3</span>働きすぎアラート（無休憩の連続時間）</h2>
+      <p class="why"><b>なぜ次か：</b>ヒートマップは事後の振り返り。前回タップからの経過時間を測り、一定時間（例：90分）休憩ゼロなら軽く促す通知を出すと、"見る"から"防ぐ"へ一歩進む。</p>
+    </div>
+
+    <div class="item">
+      <h2><span class="pri">優先度 4</span>データの書き出し / 取り込み（JSON・CSV）</h2>
+      <p class="why"><b>なぜ次か：</b>localStorage は端末・ブラウザ依存で消えると戻せない。書き出し/取り込みがあれば機種変更やバックアップに耐え、貯めた履歴の価値を守れる。</p>
+    </div>
+
+    <div class="item">
+      <h2><span class="pri">優先度 5</span>週まとめ・曜日×時間帯ヒートマップ</h2>
+      <p class="why"><b>なぜ次か：</b>基礎の見える化が揃ったら、「月曜の午後は休めていない」など曜日×時間の2軸で自分のクセを提示。行動を変えるインサイトの核になる。</p>
+    </div>
+
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← アプリに戻る</a>
+  </div>
+</body>
+</html>
