@@ -12,6 +12,7 @@
 | 10Xの問い | いまの目標に「桁違い」を持ち込む問いをカードで引き、気づきをログに残す | <a href="https://craftpaperbag.github.io/idea-box/10x-questions/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/10x-questions/next.html" target="_blank" rel="noopener">next</a> |
 | 音声文字起こし | マイク/音声ファイルをWhisperで端末内文字起こし。音声は外部送信しない（初回のみモデルDL） | <a href="https://craftpaperbag.github.io/idea-box/voice-transcribe/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/voice-transcribe/next.html" target="_blank" rel="noopener">next</a> |
 | アイソメ・ビルダー | ブロックを積むように直感操作でアイソメトリックなイラストを作り、SVGで書き出す | <a href="https://craftpaperbag.github.io/idea-box/isometric-builder/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/isometric-builder/next.html" target="_blank" rel="noopener">next</a> |
+| アイデアスパーク | 領域×仕掛け×ひねりを混ぜて、idea-box に投げる一言アイデアの種をポンと出す | <a href="https://craftpaperbag.github.io/idea-box/idea-spark/index.html" target="_blank" rel="noopener">開く</a> | <a href="https://craftpaperbag.github.io/idea-box/idea-spark/next.html" target="_blank" rel="noopener">next</a> |
 
 ## License
 
