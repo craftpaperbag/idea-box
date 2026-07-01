@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アイソメ・ビルダー — 次の実装項目</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;
+    background:#eef1f7; color:#1f2733; margin:0; padding:24px 16px 60px; line-height:1.7;}
+  .wrap{max-width:680px; margin:0 auto;}
+  h1{font-size:22px; margin:0 0 4px;}
+  .sub{color:#6b7686; font-size:13px; margin:0 0 22px;}
+  a.back{display:inline-block; margin-bottom:20px; color:#5b67ff; font-weight:600; text-decoration:none;}
+  .card{background:#fff; border:1px solid #e2e6ef; border-radius:14px; padding:16px 18px; margin:0 0 14px;
+    box-shadow:0 4px 14px rgba(31,39,51,.06);}
+  .card h2{font-size:16px; margin:0 0 6px; display:flex; align-items:center; gap:8px;}
+  .pri{font-size:11px; font-weight:700; color:#fff; background:#5b67ff; border-radius:999px; padding:3px 9px;}
+  .pri.p2{background:#2ec27e}.pri.p3{background:#ff9f43}.pri.p4{background:#9aa3b2}
+  .why{color:#6b7686; font-size:13.5px; margin:6px 0 0;}
+  .why b{color:#1f2733;}
+  footer{text-align:center; color:#9aa3b2; font-size:12px; margin-top:30px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← アプリに戻る</a>
+    <h1>次の実装項目</h1>
+    <p class="sub">アイソメ・ビルダー / 優先度つき。なぜ次かを一行で添えています。</p>
+
+    <div class="card">
+      <h2><span class="pri">P1</span> 視点の回転（4方向）</h2>
+      <p class="why"><b>なぜ次か：</b>アイソメは裏側が死角になる。90°ずつ回せるだけで「作りたい形が必ず作れる」体験に化ける、価値の伸びが一番大きい一手。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="pri p2">P2</span> ブロックの形バリエーション（スロープ／半ブロック／円柱）</h2>
+      <p class="why"><b>なぜ次か：</b>立方体だけだと表現が箱に閉じる。屋根や坂が置けると一気に「絵」になり、ツールの用途が装飾・地形まで広がる。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="pri p3">P3</span> PNG書き出し＆作品の保存スロット</h2>
+      <p class="why"><b>なぜ次か：</b>SVGは編集向き、PNGは共有向き。用途が分かれる出力を両対応にし、複数作品を名前付きで残せると制作のサイクルが回り始める。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="pri p4">P4</span> スポイト＆範囲塗り（同色まとめ置き）</h2>
+      <p class="why"><b>なぜ次か：</b>大きな面を1個ずつ積むのは疲れる。既存ブロックの色を吸う・面でまとめて積む操作で、制作スピードが現実的になる。</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="pri p4">P4</span> 影と地面の調整（ライト角・グリッド濃淡）</h2>
+      <p class="why"><b>なぜ次か：</b>仕上がりの“それっぽさ”は陰影で決まる。ライト方向や接地影を足すと、同じ造形でも完成度の見え方が大きく上がる。</p>
+    </div>
+
+    <footer>idea-box · isometric-builder</footer>
+  </div>
+</body>
+</html>
