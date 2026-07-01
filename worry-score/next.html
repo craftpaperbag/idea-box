@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>モヤモヤ・スコア — 次の実装項目</title>
+<style>
+  :root{
+    --bg:#f4f5f7;--card:#fff;--ink:#23262b;--sub:#868c96;--line:#e7e9ee;
+    --brand:#5b6ee0;--shadow:0 1px 2px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;margin:0;padding:24px 16px 60px}
+  .wrap{max-width:620px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .tag{color:var(--sub);font-size:13px;margin-bottom:22px}
+  .back{display:inline-block;margin-bottom:18px;color:var(--brand);text-decoration:none;font-size:13.5px;font-weight:600}
+  ol{list-style:none;counter-reset:n;margin:0;padding:0}
+  li{counter-increment:n;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:16px 18px 16px 56px;position:relative;margin-bottom:14px}
+  li::before{content:counter(n);position:absolute;left:16px;top:16px;width:28px;height:28px;
+    background:var(--ink);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px}
+  .pri{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;
+    border-radius:999px;margin-bottom:7px}
+  .p-high{background:#e6e9fb;color:#3a45a8}
+  .p-mid{background:#eef0f3;color:#4b5563}
+  .p-low{background:#eef0f3;color:#6b7280}
+  h3{margin:0 0 5px;font-size:16px}
+  .why{font-size:13.5px;color:var(--sub);margin:0}
+  .why b{color:var(--ink)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← モヤモヤ・スコアに戻る</a>
+    <h1>次の実装項目</h1>
+    <div class="tag">優先度つき。「なぜ次か」を一行添えています。</div>
+
+    <ol>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>結果をコピー／シェアできるひとことカード</h3>
+        <p class="why"><b>なぜ次か：</b>「気にしすぎかも・◯点」のような結論は人に話したくなる。コピー1つで友だちや自分のメモに残せると、10秒の価値が外に広がる。</p>
+      </li>
+      <li>
+        <span class="pri p-high">優先度 高</span>
+        <h3>「誰について」の一言タグを任意で残せる</h3>
+        <p class="why"><b>なぜ次か：</b>履歴が同じ相手か別の相手か分からないと傾向が読めない。10秒を崩さない任意入力にすれば、あとで「この人だけ点数が高い」が見えてくる。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>スコアだけでなく「効いた一言」を履歴にも表示</h3>
+        <p class="why"><b>なぜ次か：</b>今は履歴に点数しか残らない。過去の自分へのアドバイスが並ぶと読み返す価値が生まれ、再訪の動機になる。</p>
+      </li>
+      <li>
+        <span class="pri p-mid">優先度 中</span>
+        <h3>質問の並び替え・軽いランダム化で毎回の新鮮さ</h3>
+        <p class="why"><b>なぜ次か：</b>毎回同じ順だと惰性でタップしがち。順番や言い回しを少し変えると、ちゃんと自分の状態に向き合える。</p>
+      </li>
+      <li>
+        <span class="pri p-low">優先度 低</span>
+        <h3>1週間の平均をふりかえる「モヤモヤ天気」表示</h3>
+        <p class="why"><b>なぜ次か：</b>傾向の可視化は嬉しいが、まずは単発の採点体験を磨くのが先。データが貯まってから効いてくる機能なので最後。</p>
+      </li>
+    </ol>
+  </div>
+</body>
+</html>
