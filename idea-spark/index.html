@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>アイデアスパーク</title>
+<style>
+  :root{
+    --bg:#0f1117;
+    --bg2:#151823;
+    --card:#1b1f2c;
+    --card2:#222738;
+    --ink:#f3f5fa;
+    --sub:#9aa3b7;
+    --line:#2c3247;
+    --accent:#7c6cff;
+    --accent-soft:#241f44;
+    --gold:#ffcf6b;
+    --pink:#ff7ca8;
+    --cyan:#5fd6d0;
+    --r:20px;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#1a1f33 0%,var(--bg) 55%);
+    color:var(--ink);line-height:1.65;min-height:100vh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(40px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  }
+  .wrap{max-width:600px;margin:0 auto;padding:24px 16px 0}
+
+  header{margin:6px 2px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  h1{font-size:22px;margin:0;letter-spacing:.02em;font-weight:800}
+  h1 .x{color:var(--accent)}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:5px}
+  .nextlink{flex:none;font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);
+    padding:7px 11px;border-radius:999px;white-space:nowrap;background:var(--card)}
+  .nextlink:active{transform:scale(.96)}
+
+  /* reels */
+  .reels{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px}
+  .reel{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:12px 12px 12px 14px;position:relative;overflow:hidden}
+  .reel .axis{flex:none;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--sub);
+    width:56px;text-transform:none}
+  .reel .val{flex:1;min-width:0;font-size:16.5px;font-weight:700;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .reel .val.spin{animation:flick .4s ease}
+  @keyframes flick{
+    0%{opacity:0;transform:translateY(-8px)}
+    60%{opacity:1}
+    100%{transform:translateY(0)}
+  }
+  .lock{flex:none;width:38px;height:38px;border-radius:11px;border:1.5px solid var(--line);
+    background:var(--bg2);color:var(--sub);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:transform .1s,background .15s,color .15s,border-color .15s}
+  .lock:active{transform:scale(.9)}
+  .reel[data-locked="1"]{border-color:var(--accent)}
+  .reel[data-locked="1"] .lock{background:var(--accent-soft);border-color:var(--accent);color:var(--gold)}
+  .reel[data-locked="1"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  .reel:nth-child(1) .axis{color:var(--pink)}
+  .reel:nth-child(2) .axis{color:var(--cyan)}
+  .reel:nth-child(3) .axis{color:var(--gold)}
+
+  /* spark button */
+  .spark{width:100%;border:none;border-radius:16px;padding:17px;font:inherit;font-size:18px;font-weight:800;
+    color:#fff;background:linear-gradient(135deg,#8b7bff,#6a5aff);cursor:pointer;letter-spacing:.03em;
+    box-shadow:0 8px 22px rgba(124,108,255,.35);transition:transform .12s,box-shadow .12s}
+  .spark:active{transform:translateY(2px) scale(.99);box-shadow:0 3px 12px rgba(124,108,255,.3)}
+
+  /* result card */
+  .result{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);
+    border-radius:var(--r);box-shadow:var(--shadow);padding:22px 20px 18px;margin-top:16px;
+    min-height:150px;display:flex;flex-direction:column}
+  .result .empty{margin:auto;text-align:center;color:var(--sub)}
+  .result .empty .big{font-size:34px;margin-bottom:8px}
+  .result .empty .hint{font-size:13px}
+  .combo{font-size:12px;color:var(--sub);font-weight:700;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px}
+  .combo span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+  .seed{font-size:20px;font-weight:800;line-height:1.55;letter-spacing:.01em;margin:0 0 6px}
+  .seed.spin{animation:flick .45s ease}
+  .actions{display:flex;gap:9px;margin-top:16px}
+  .act{flex:1;border:1.5px solid var(--line);background:var(--bg2);color:var(--ink);font:inherit;
+    font-size:13.5px;font-weight:700;padding:11px;border-radius:12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,background .15s,border-color .15s,color .15s}
+  .act:active{transform:scale(.96)}
+  .act.saved{color:var(--gold);border-color:var(--accent);background:var(--accent-soft)}
+  .act.copied{color:var(--cyan);border-color:var(--cyan)}
+
+  /* favorites */
+  .favs{margin-top:26px}
+  .favs h2{font-size:13px;font-weight:800;color:var(--sub);letter-spacing:.04em;margin:0 0 12px;
+    display:flex;align-items:center;gap:8px}
+  .favs h2 .count{background:var(--accent-soft);color:var(--gold);border:1px solid var(--line);
+    border-radius:999px;font-size:11px;padding:2px 9px}
+  .favlist{display:flex;flex-direction:column;gap:10px}
+  .fav{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 12px 13px 15px;
+    position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:10px}
+  .fav::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+  .fav .ftext{flex:1;font-size:14.5px;font-weight:700;line-height:1.5}
+  .fav .fcombo{font-size:11px;color:var(--sub);font-weight:600;margin-top:5px}
+  .fav .fdel{flex:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--sub);font-size:15px;cursor:pointer;line-height:1;
+    display:flex;align-items:center;justify-content:center;transition:transform .1s,color .15s,border-color .15s}
+  .fav .fdel:active{transform:scale(.9);color:var(--pink);border-color:var(--pink)}
+  .favempty{font-size:12.5px;color:#5b637a;text-align:center;padding:6px 0 2px}
+
+  .foot{text-align:center;color:#5b637a;font-size:11.5px;margin-top:30px}
+  .foot a{color:var(--sub)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:#2a3048;border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;
+    padding:11px 18px;border-radius:999px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+    transition:opacity .2s,transform .2s;z-index:20}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(min-width:520px){
+    .reel .axis{width:64px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>アイデア<span class="x">スパーク</span></h1>
+      <div class="tag">領域 × 仕掛け × ひねりを混ぜて、idea-box に投げる一言の種を出す</div>
+    </div>
+    <a class="nextlink" href="./next.html" target="_blank" rel="noopener">次の項目 →</a>
+  </header>
+
+  <div class="reels" id="reels">
+    <div class="reel" data-axis="domain" data-locked="0">
+      <div class="axis">領域</div>
+      <div class="val" id="v-domain">睡眠</div>
+      <button class="lock" aria-label="この軸を固定">🔓</button>
+    </div>
+    <div class="reel" data-axis="mechanic" data-locked="0">
+      <div class="axis">仕掛け</div>
+      <div class="val" id="v-mechanic">カードを引く</div>
+      <button class="lock" aria-label="この軸を固定">🔓</button>
+    </div>
+    <div class="reel" data-axis="twist" data-locked="0">
+      <div class="axis">ひねり</div>
+      <div class="val" id="v-twist">ゆるく褒める</div>
+      <button class="lock" aria-label="この軸を固定">🔓</button>
+    </div>
+  </div>
+
+  <button class="spark" id="spark">✨ スパーク</button>
+
+  <div class="result" id="result">
+    <div class="empty" id="empty">
+      <div class="big">🎰</div>
+      <div>まずは「スパーク」してみよう</div>
+      <div class="hint">気に入った軸は🔒で固定、⭐で種を貯められる</div>
+    </div>
+    <div id="seedbox" style="display:none">
+      <div class="combo" id="combo"></div>
+      <p class="seed" id="seed"></p>
+      <div class="actions">
+        <button class="act" id="save">⭐ 保存</button>
+        <button class="act" id="copy">📋 コピー</button>
+        <button class="act" id="reroll">🔁 言い回し</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="favs">
+    <h2>お気に入りの種 <span class="count" id="favcount">0</span></h2>
+    <div class="favlist" id="favlist"></div>
+    <div class="favempty" id="favempty">まだ無いよ。気に入った種を⭐で貯めよう</div>
+  </div>
+
+  <div class="foot">
+    出た種はそのまま idea-box に投げてOK ✍️<br>
+    <a href="./next.html" target="_blank" rel="noopener">次に実装したいこと →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- 3つの軸のデータ ----
+  var DOMAINS = [
+    "睡眠","家事","気分","時間","お金","健康","集中","人間関係","食事",
+    "外出","片付け","学び","運動","朝","夜","休憩","やる気","習慣",
+    "買い物","天気","持ち物","スマホ時間","水分","姿勢"
+  ];
+  var MECHANICS = [
+    "タップで判定する","毎日一言ログを貯める","ルーレットで決める","カードを一枚引く",
+    "スライダーで可視化する","カウントダウンする","before/afterを比べる","ガチャを回す",
+    "3択でぽちぽち答える","スコアをつける","タイマーで区切る","チェックリストにする",
+    "ボタン一発で記録する","today/未来を並べる","一問一答で掘る","ヒートマップで見せる"
+  ];
+  var TWISTS = [
+    "10秒で完結する","スマホ片手で使える","音だけで伝える","言い訳をくれる",
+    "ゆるく褒める","数字を桁違いに考える","感情に寄り添う","ちょっと煽ってくる",
+    "見た目が気持ちいい","毎回ちがう一言をくれる","がんばりを可視化する","無理させない",
+    "1タップで終わる","こっそり続けられる","ごほうびがある","理由を一行そえる"
+  ];
+
+  // ---- 一言に整形するテンプレ（{d}=領域 {m}=仕掛け {t}=ひねり）----
+  var TEMPLATES = [
+    "{d}を{m}アプリ。{t}のがミソ。",
+    "{t}かたちで、{d}を{m}ツール。",
+    "{d}まわりを{m}。しかも{t}。",
+    "{m}ことで{d}を整える。{t}。",
+    "{t}、{d}のための「{m}」ミニアプリ。",
+    "{d}を、{m}で軽くする。{t}のが効く。",
+    "毎日ひらいて{d}を{m}。{t}。",
+    "{d}の悩みを{m}。ポイントは{t}こと。"
+  ];
+
+  var STORE_KEY = "idea-spark:favs:v1";
+
+  // ---- 状態 ----
+  var current = null;        // {domain, mechanic, twist, template}
+  var favs = load();
+
+  // ---- DOM ----
+  var $ = function(id){ return document.getElementById(id); };
+  var reels = $("reels");
+  var vDomain = $("v-domain"), vMechanic = $("v-mechanic"), vTwist = $("v-twist");
+  var seedbox = $("seedbox"), emptyEl = $("empty"), seedEl = $("seed"), comboEl = $("combo");
+  var saveBtn = $("save"), copyBtn = $("copy"), rerollBtn = $("reroll");
+  var toastEl = $("toast");
+
+  function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function isLocked(axis){
+    var r = reels.querySelector('.reel[data-axis="'+axis+'"]');
+    return r && r.getAttribute("data-locked") === "1";
+  }
+
+  function fill(tpl, c){
+    return tpl.replace("{d}", c.domain).replace("{m}", c.mechanic).replace("{t}", c.twist);
+  }
+
+  function render(spin){
+    vDomain.textContent = current.domain;
+    vMechanic.textContent = current.mechanic;
+    vTwist.textContent = current.twist;
+    if(spin){
+      [vDomain,vMechanic,vTwist].forEach(function(el, i){
+        if(!isLocked(el.id.replace("v-",""))){
+          el.classList.remove("spin"); void el.offsetWidth; el.classList.add("spin");
+        }
+      });
+    }
+    emptyEl.style.display = "none";
+    seedbox.style.display = "block";
+    comboEl.innerHTML = "<span>"+current.domain+"</span><span>"+current.mechanic+"</span><span>"+current.twist+"</span>";
+    seedEl.textContent = fill(current.template, current);
+    seedEl.classList.remove("spin"); void seedEl.offsetWidth; seedEl.classList.add("spin");
+    refreshSaveState();
+  }
+
+  function spark(){
+    current = {
+      domain:   isLocked("domain")   && current ? current.domain   : rand(DOMAINS),
+      mechanic: isLocked("mechanic") && current ? current.mechanic : rand(MECHANICS),
+      twist:    isLocked("twist")    && current ? current.twist    : rand(TWISTS),
+      template: rand(TEMPLATES)
+    };
+    render(true);
+  }
+
+  // 言い回しだけ変える（軸は固定）
+  function reroll(){
+    if(!current) return spark();
+    var t;
+    do { t = rand(TEMPLATES); } while(TEMPLATES.length > 1 && t === current.template);
+    current.template = t;
+    seedEl.textContent = fill(current.template, current);
+    seedEl.classList.remove("spin"); void seedEl.offsetWidth; seedEl.classList.add("spin");
+    refreshSaveState();
+  }
+
+  // ---- お気に入り ----
+  function seedText(c){ return fill(c.template, c); }
+  function comboKey(c){ return c.domain+"|"+c.mechanic+"|"+c.twist; }
+
+  function isSaved(){
+    if(!current) return false;
+    var txt = seedText(current);
+    return favs.some(function(f){ return f.text === txt; });
+  }
+  function refreshSaveState(){
+    if(isSaved()){
+      saveBtn.classList.add("saved"); saveBtn.textContent = "⭐ 保存済み";
+    } else {
+      saveBtn.classList.remove("saved"); saveBtn.textContent = "⭐ 保存";
+    }
+  }
+
+  function toggleSave(){
+    if(!current) return;
+    var txt = seedText(current);
+    var idx = favs.findIndex(function(f){ return f.text === txt; });
+    if(idx >= 0){
+      favs.splice(idx,1);
+      toast("お気に入りから外したよ");
+    } else {
+      favs.unshift({ text:txt, combo:comboKey(current), at:Date.now() });
+      toast("お気に入りに追加 ⭐");
+    }
+    save(); renderFavs(); refreshSaveState();
+  }
+
+  function renderFavs(){
+    var list = $("favlist"), empty = $("favempty"), count = $("favcount");
+    count.textContent = favs.length;
+    list.innerHTML = "";
+    if(favs.length === 0){ empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    favs.forEach(function(f, i){
+      var el = document.createElement("div");
+      el.className = "fav";
+      var comboLabel = f.combo ? f.combo.replace(/\|/g," × ") : "";
+      el.innerHTML =
+        '<div class="ftext">'+escapeHtml(f.text)+
+          (comboLabel ? '<div class="fcombo">'+escapeHtml(comboLabel)+'</div>' : '')+
+        '</div>'+
+        '<button class="fdel" aria-label="削除" data-i="'+i+'">✕</button>';
+      list.appendChild(el);
+    });
+  }
+
+  // ---- コピー ----
+  function copySeed(){
+    if(!current) return;
+    var txt = seedText(current);
+    var done = function(){
+      copyBtn.classList.add("copied"); copyBtn.textContent = "✓ コピーした";
+      toast("コピーした！そのまま投げてOK");
+      setTimeout(function(){ copyBtn.classList.remove("copied"); copyBtn.textContent = "📋 コピー"; }, 1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt, done); });
+    } else {
+      fallbackCopy(txt, done);
+    }
+  }
+  function fallbackCopy(txt, done){
+    var ta = document.createElement("textarea");
+    ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); done(); } catch(e){ toast("コピーできなかった…"); }
+    document.body.removeChild(ta);
+  }
+
+  // ---- storage ----
+  function load(){
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function save(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(favs)); } catch(e){}
+  }
+
+  // ---- utils ----
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  var toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1600);
+  }
+
+  // ---- events ----
+  $("spark").addEventListener("click", spark);
+  saveBtn.addEventListener("click", toggleSave);
+  copyBtn.addEventListener("click", copySeed);
+  rerollBtn.addEventListener("click", reroll);
+
+  reels.addEventListener("click", function(e){
+    var btn = e.target.closest(".lock");
+    if(!btn) return;
+    var reel = btn.closest(".reel");
+    var locked = reel.getAttribute("data-locked") === "1";
+    reel.setAttribute("data-locked", locked ? "0" : "1");
+    btn.textContent = locked ? "🔓" : "🔒";
+  });
+
+  $("favlist").addEventListener("click", function(e){
+    var btn = e.target.closest(".fdel");
+    if(!btn) return;
+    var i = parseInt(btn.getAttribute("data-i"), 10);
+    if(!isNaN(i)){ favs.splice(i,1); save(); renderFavs(); refreshSaveState(); }
+  });
+
+  // ---- init ----
+  renderFavs();
+})();
+</script>
+</body>
+</html>

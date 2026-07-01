@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>アイデアスパーク — 次の実装項目</title>
+<style>
+  :root{
+    --bg:#0f1117;--card:#1b1f2c;--ink:#f3f5fa;--sub:#9aa3b7;--line:#2c3247;--accent:#7c6cff;--gold:#ffcf6b;--cyan:#5fd6d0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#1a1f33 0%,var(--bg) 55%);color:var(--ink);
+    line-height:1.7;padding:env(safe-area-inset-top) 16px calc(48px + env(safe-area-inset-bottom))}
+  .wrap{max-width:600px;margin:0 auto;padding-top:24px}
+  header{margin:6px 2px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  h1{font-size:21px;margin:0;font-weight:800}
+  h1 .x{color:var(--accent)}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:5px}
+  .back{flex:none;font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);
+    padding:7px 11px;border-radius:999px;white-space:nowrap;background:var(--card)}
+  .back:active{transform:scale(.96)}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 15px;margin-bottom:13px;position:relative;overflow:hidden}
+  .item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  .item .p{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.05em;color:#0f1117;
+    background:var(--gold);padding:3px 9px;border-radius:999px;margin-bottom:9px}
+  .item h3{font-size:16px;margin:0 0 6px;font-weight:800}
+  .item .why{font-size:13.5px;color:var(--sub);margin:0}
+  .item .why b{color:var(--ink);font-weight:700}
+  .item:nth-child(1)::before{background:var(--gold)}
+  .item:nth-child(2)::before{background:var(--cyan)}
+  .foot{text-align:center;color:#5b637a;font-size:11.5px;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>アイデア<span class="x">スパーク</span> — 次の実装項目</h1>
+      <div class="tag">優先度の高い順。各項目に「なぜ次か」を一行。</div>
+    </div>
+    <a class="back" href="./index.html" target="_blank" rel="noopener">← 本体</a>
+  </header>
+
+  <div class="item">
+    <span class="p">P1</span>
+    <h3>既存 idea-box との重複チェック</h3>
+    <p class="why"><b>被り防止が発想の実用性を一番上げる。</b>出た種が既存6アイデア（睡眠・家事・気分…）と近いと控えめに「これ近いかも」と教える。似た軸だけ再スパークもワンタップで。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">P2</span>
+    <h3>なぜ面白いかを一行そえる</h3>
+    <p class="why"><b>種から「作るか」の判断がしやすくなる。</b>組み合わせの意外性（遠い領域×身近な仕掛け 等）を軽く言語化して添えると、ただの単語の羅列で終わらない。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">P3</span>
+    <h3>共有URL / 画像で残す</h3>
+    <p class="why"><b>面白い種を残す・見せる動線が欲しい。</b>種を URL パラメータに載せて開き直せるように。お気に入りをカード画像に書き出せると、人に見せて反応をもらえる。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">P4</span>
+    <h3>軸データの拡充とカテゴリ重み</h3>
+    <p class="why"><b>回すほどマンネリが出るのを防ぐ。</b>領域・仕掛け・ひねりの語彙を増やし、直近に出た値の再出現を下げる。季節やモードで語彙セットを切り替えられると鮮度が続く。</p>
+  </div>
+
+  <div class="item">
+    <span class="p">P5</span>
+    <h3>「この種で作って」雛形メモ生成</h3>
+    <p class="why"><b>idea-box への橋渡しを一歩短くする。</b>選んだ種から、ディレクトリ名候補・一行説明・想定UIの下書きを生成してコピー。そのまま次のアイデア投げに使える。</p>
+  </div>
+
+  <div class="foot">アイデアスパーク · idea-box</div>
+</div>
+</body>
+</html>
