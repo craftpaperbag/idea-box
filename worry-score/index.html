@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>モヤモヤ・スコア</title>
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --ink:#23262b;
+    --sub:#868c96;
+    --line:#e7e9ee;
+    --brand:#5b6ee0;
+    --brand-soft:#eceffb;
+    --calm:#4f9e72;
+    --calm-soft:#e7f3ec;
+    --warn:#d99a3f;
+    --warn-soft:#fbf1e0;
+    --act:#d65a5a;
+    --act-soft:#fbe8e8;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.07);
+    --r:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(40px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:24px 16px 0}
+  header{margin:6px 4px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  h1{font-size:22px;margin:0;letter-spacing:.02em}
+  .tag{font-size:12.5px;color:var(--sub);margin-top:6px}
+  .timer{font-size:12px;color:var(--sub);font-weight:700;font-variant-numeric:tabular-nums;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 11px;white-space:nowrap}
+  .timer b{color:var(--brand)}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:22px 18px 20px;
+  }
+
+  /* progress dots */
+  .dots{display:flex;gap:7px;justify-content:center;margin-bottom:20px}
+  .dots i{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .2s,transform .2s}
+  .dots i.on{background:var(--brand)}
+  .dots i.done{background:var(--brand);opacity:.4}
+
+  .qnum{font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.04em;text-align:center;margin-bottom:6px}
+  .qtext{font-size:19px;font-weight:800;text-align:center;margin:0 0 20px;letter-spacing:.01em}
+
+  .opts{display:flex;flex-direction:column;gap:11px}
+  .opt{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    border:1.5px solid var(--line);background:#fff;font:inherit;font-size:16px;font-weight:700;color:var(--ink);
+    padding:15px 16px;border-radius:15px;cursor:pointer;
+    transition:transform .08s, border-color .15s, background .15s;
+  }
+  .opt:active{transform:scale(.975)}
+  .opt .emo{font-size:22px;line-height:1}
+  .opt.pick{border-color:var(--brand);background:var(--brand-soft)}
+
+  .back{display:block;margin:16px auto 0;background:none;border:none;color:var(--sub);
+    font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px}
+  .back:disabled{opacity:.35;cursor:default}
+
+  /* result */
+  .result{display:none}
+  .result.show{display:block}
+  .gauge{text-align:center;margin:2px 0 6px}
+  .score{font-size:56px;font-weight:800;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .score small{font-size:20px;font-weight:700;color:var(--sub);margin-left:2px}
+  .track{position:relative;height:12px;border-radius:999px;margin:16px 6px 8px;
+    background:linear-gradient(90deg,var(--calm) 0%,var(--warn) 55%,var(--act) 100%)}
+  .needle{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:#fff;
+    border:3px solid var(--ink);box-shadow:0 2px 7px rgba(0,0,0,.2);
+    transform:translate(-50%,-50%);transition:left .5s cubic-bezier(.2,.7,.2,1)}
+  .scale{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);font-weight:600;margin:0 4px}
+
+  .verdict{text-align:center;margin:16px 0 2px}
+  .vlabel{font-size:23px;font-weight:800;letter-spacing:.02em}
+  .vlabel.calm{color:var(--calm)}
+  .vlabel.watch{color:var(--warn)}
+  .vlabel.face{color:var(--act)}
+  .vsub{font-size:13px;color:var(--sub);margin-top:3px}
+
+  .advice{margin-top:16px;border-radius:15px;padding:14px 15px;font-size:14.5px;line-height:1.65}
+  .advice.calm{background:var(--calm-soft);color:#356f52}
+  .advice.watch{background:var(--warn-soft);color:#8a6420}
+  .advice.face{background:var(--act-soft);color:#a34141}
+  .advice b{font-weight:800}
+
+  .elapsed{text-align:center;font-size:12.5px;color:var(--sub);margin-top:14px}
+  .elapsed b{color:var(--brand);font-weight:800;font-variant-numeric:tabular-nums}
+
+  .actions{display:flex;gap:10px;margin-top:16px}
+  .btn{flex:1;border:1.5px solid var(--line);background:#fff;font:inherit;font-size:15px;font-weight:700;
+    color:var(--ink);padding:13px;border-radius:14px;cursor:pointer;transition:transform .08s,background .15s}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+
+  /* history */
+  .hist{margin-top:22px}
+  .histhead{display:flex;align-items:center;justify-content:space-between;margin:0 6px 10px}
+  .histhead h2{font-size:13px;color:var(--sub);font-weight:700;margin:0;letter-spacing:.03em}
+  .clear{background:none;border:none;color:var(--sub);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;opacity:.8}
+  .avg{font-size:12px;color:var(--sub);margin:0 6px 10px;text-align:center}
+  .avg b{color:var(--ink);font-weight:800}
+  .rows{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:11px 14px;box-shadow:var(--shadow)}
+  .row .n{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;width:38px;text-align:right}
+  .row .bar{flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+  .row .bar span{display:block;height:100%;border-radius:999px}
+  .row .when{font-size:11.5px;color:var(--sub);white-space:nowrap}
+  .empty{text-align:center;color:var(--sub);font-size:13px;padding:8px 0}
+
+  footer{text-align:center;margin:26px 4px 0;font-size:11.5px;color:var(--sub);line-height:1.7}
+  footer a{color:var(--brand);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>モヤモヤ・スコア</h1>
+      <div class="tag">人間関係のモヤモヤを、10秒で採点</div>
+    </div>
+    <div class="timer" id="timer">⏱ <b>0.0</b>秒</div>
+  </header>
+
+  <!-- 質問カード -->
+  <div class="card" id="quiz">
+    <div class="dots" id="dots"></div>
+    <div class="qnum" id="qnum">Q1 / 4</div>
+    <div class="qtext" id="qtext">質問</div>
+    <div class="opts" id="opts"></div>
+    <button class="back" id="back" disabled>← ひとつ戻る</button>
+  </div>
+
+  <!-- 結果カード -->
+  <div class="card result" id="result">
+    <div class="gauge">
+      <div class="score" id="scoreNum">0<small>点</small></div>
+    </div>
+    <div class="track"><div class="needle" id="needle" style="left:0%"></div></div>
+    <div class="scale"><span>手放していい</span><span>向き合う</span><span>早めに動く</span></div>
+    <div class="verdict">
+      <div class="vlabel" id="vlabel">—</div>
+      <div class="vsub" id="vsub"></div>
+    </div>
+    <div class="advice" id="advice"></div>
+    <div class="elapsed" id="elapsed"></div>
+    <div class="actions">
+      <button class="btn" id="again">もう一度</button>
+      <button class="btn primary" id="save">この結果を記録</button>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div class="hist">
+    <div class="histhead">
+      <h2>さいきんのモヤモヤ</h2>
+      <button class="clear" id="clear" style="display:none">消す</button>
+    </div>
+    <div class="avg" id="avg" style="display:none"></div>
+    <div class="rows" id="rows"><div class="empty">まだ記録はありません。ひとつ採点してみましょう。</div></div>
+  </div>
+
+  <footer>
+    相手は変えられなくても、モヤモヤの正体は10秒で見える。<br>
+    <a href="./next.html" target="_blank" rel="noopener">次の実装項目 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // 4つの質問。各選択肢に value(0/1/2) と、アドバイス生成用のキーを持たせる
+  const QS = [
+    { q:"そのモヤモヤ、どれくらい続いてる？", key:"freq",
+      opts:[
+        {emo:"🌤",t:"さっき・一度きり",v:0},
+        {emo:"🔁",t:"ときどき浮かぶ",v:1},
+        {emo:"🌧",t:"ずっと引きずってる",v:2},
+      ]},
+    { q:"その相手、あなたにとって大切？", key:"care",
+      opts:[
+        {emo:"🫥",t:"そうでもない",v:0},
+        {emo:"🙂",t:"まあまあ大切",v:1},
+        {emo:"💛",t:"とても大切",v:2},
+      ]},
+    { q:"それ、事実？それとも想像？", key:"fact",
+      opts:[
+        {emo:"💭",t:"たぶん想像・憶測",v:0},
+        {emo:"🤔",t:"半々かも",v:1},
+        {emo:"✅",t:"はっきり事実",v:2},
+      ]},
+    { q:"自分から動けば、変えられそう？", key:"ctrl",
+      opts:[
+        {emo:"🧱",t:"たぶん無理",v:0},
+        {emo:"🚪",t:"少しはできそう",v:1},
+        {emo:"🙌",t:"自分で動かせる",v:2},
+      ]},
+  ];
+
+  const $=id=>document.getElementById(id);
+  const dots=$("dots"), qnum=$("qnum"), qtext=$("qtext"), opts=$("opts"),
+        back=$("back"), quiz=$("quiz"), result=$("result");
+
+  let step=0;
+  const ans={};        // key -> value
+  let startedAt=null;  // 最初のタップ時刻
+  let finishedAt=null;
+  let tick=null;
+
+  // タイマー表示
+  function runTimer(){
+    stopTimer();
+    tick=setInterval(()=>{
+      const t=(Date.now()-startedAt)/1000;
+      $("timer").innerHTML="⏱ <b>"+t.toFixed(1)+"</b>秒";
+    },100);
+  }
+  function stopTimer(){ if(tick){clearInterval(tick);tick=null;} }
+
+  function renderDots(){
+    dots.innerHTML="";
+    QS.forEach((_,i)=>{
+      const el=document.createElement("i");
+      if(i===step) el.className="on";
+      else if(i<step) el.className="done";
+      dots.appendChild(el);
+    });
+  }
+
+  function renderQ(){
+    const item=QS[step];
+    renderDots();
+    qnum.textContent="Q"+(step+1)+" / "+QS.length;
+    qtext.textContent=item.q;
+    opts.innerHTML="";
+    item.opts.forEach(o=>{
+      const b=document.createElement("button");
+      b.className="opt"+(ans[item.key]===o.v?" pick":"");
+      b.innerHTML='<span class="emo">'+o.emo+'</span><span>'+o.t+'</span>';
+      b.onclick=()=>choose(item.key,o.v);
+      opts.appendChild(b);
+    });
+    back.disabled=step===0;
+  }
+
+  function choose(key,v){
+    if(startedAt===null){ startedAt=Date.now(); runTimer(); }
+    ans[key]=v;
+    // 気持ちよく見せるための一瞬のハイライト → 自動で次へ
+    [...opts.children].forEach(c=>c.classList.remove("pick"));
+    const idx=QS[step].opts.findIndex(o=>o.v===v);
+    if(opts.children[idx]) opts.children[idx].classList.add("pick");
+    setTimeout(()=>{
+      if(step<QS.length-1){ step++; renderQ(); }
+      else finish();
+    },170);
+  }
+
+  back.onclick=()=>{ if(step>0){ step--; renderQ(); } };
+
+  // 採点：合計0〜8 → 0〜100。高いほど「向き合う価値あり／動くべき」
+  function scoreOf(){
+    const raw=(ans.freq||0)+(ans.care||0)+(ans.fact||0)+(ans.ctrl||0);
+    return { raw, pct: Math.round(raw/8*100) };
+  }
+
+  // 回答パターンから一番効く一言を選ぶ
+  function adviceOf(){
+    const {raw}=scoreOf();
+    let bucket, klass;
+    if(raw<=2){ bucket={cls:"calm",label:"気にしすぎかも",sub:"手放していいサイン"}; }
+    else if(raw<=4){ bucket={cls:"watch",label:"ひとまず様子見",sub:"あわてなくて大丈夫"}; }
+    else if(raw<=6){ bucket={cls:"face",label:"向き合う価値あり",sub:"小さく動くと軽くなる"}; }
+    else { bucket={cls:"face",label:"早めに動こう",sub:"放っておくと重くなるタイプ"}; }
+
+    // 個別の一言（優先度順に最初に当たったものを出す）
+    let tip;
+    if(ans.fact===0 && ans.freq>=1){
+      tip="まだ<b>想像の段階</b>。事実を一つ確かめるだけで、たぶんスッと軽くなる。";
+    }else if(ans.ctrl===0 && ans.care<=1){
+      tip="相手は変えられないし、そこまで大切でもない相手。<b>そっと距離を取る</b>のが正解かも。";
+    }else if(ans.ctrl===0 && ans.care===2){
+      tip="大切だけど自分では動かせない。<b>期待を手放して、事実だけ受けとめる</b>と楽になる。";
+    }else if(ans.care===0 && ans.freq===0){
+      tip="大切でもなく、一度きり。<b>たぶん明日には忘れていい</b>やつ。";
+    }else if(ans.ctrl===2 && ans.care>=1){
+      tip="自分から動かせる余地がある。<b>今日ひとこと伝える</b>だけで景色が変わるかも。";
+    }else if(ans.freq===2 && ans.fact===2){
+      tip="事実として何度も起きてる。<b>一度ちゃんと向き合う</b>タイミングが来てる。";
+    }else if(ans.care===2){
+      tip="大切な相手だからこそモヤモヤする。<b>相手に興味がある証拠</b>。丁寧に扱おう。";
+    }else{
+      tip="いったん言葉にできた時点で半分解決。<b>深呼吸して、まず一歩</b>。";
+    }
+    return {...bucket, tip};
+  }
+
+  function finish(){
+    finishedAt=Date.now();
+    stopTimer();
+    const secs=startedAt?((finishedAt-startedAt)/1000):0;
+    $("timer").innerHTML="⏱ <b>"+secs.toFixed(1)+"</b>秒";
+
+    const {pct}=scoreOf();
+    const a=adviceOf();
+
+    $("scoreNum").innerHTML=pct+'<small>点</small>';
+    $("needle").style.left=pct+"%";
+    const vl=$("vlabel"); vl.textContent=a.label; vl.className="vlabel "+a.cls;
+    $("vsub").textContent=a.sub;
+    const ad=$("advice"); ad.className="advice "+a.cls; ad.innerHTML=a.tip;
+    $("elapsed").innerHTML="この採点にかかった時間 <b>"+secs.toFixed(1)+"秒</b> ⚡";
+
+    quiz.style.display="none";
+    result.classList.add("show");
+    // 今回の結果を一時保持（記録ボタン用）
+    lastResult={score:pct, label:a.label, cls:a.cls, at:Date.now()};
+  }
+
+  let lastResult=null;
+
+  $("again").onclick=reset;
+  function reset(){
+    step=0; startedAt=null; finishedAt=null; lastResult=null;
+    for(const k in ans) delete ans[k];
+    stopTimer();
+    $("timer").innerHTML="⏱ <b>0.0</b>秒";
+    result.classList.remove("show");
+    quiz.style.display="";
+    renderQ();
+  }
+
+  // ===== 履歴（localStorage）=====
+  const KEY="worry-score-log-v1";
+  const load=()=>{ try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]} };
+  const store=arr=>localStorage.setItem(KEY,JSON.stringify(arr.slice(-8)));
+
+  $("save").onclick=()=>{
+    if(!lastResult) return;
+    const arr=load(); arr.push(lastResult); store(arr);
+    renderHist();
+    const b=$("save"); b.textContent="記録しました ✓"; b.disabled=true;
+    setTimeout(reset,650);
+  };
+  $("clear").onclick=()=>{ localStorage.removeItem(KEY); renderHist(); };
+
+  function colorFor(cls){
+    return cls==="calm"?"var(--calm)":cls==="watch"?"var(--warn)":"var(--act)";
+  }
+  function ago(ts){
+    const d=Math.floor((Date.now()-ts)/1000);
+    if(d<60) return "たった今";
+    if(d<3600) return Math.floor(d/60)+"分前";
+    if(d<86400) return Math.floor(d/3600)+"時間前";
+    return Math.floor(d/86400)+"日前";
+  }
+
+  function renderHist(){
+    const arr=load();
+    const rows=$("rows"), clear=$("clear"), avg=$("avg");
+    if(!arr.length){
+      rows.innerHTML='<div class="empty">まだ記録はありません。ひとつ採点してみましょう。</div>';
+      clear.style.display="none"; avg.style.display="none"; return;
+    }
+    clear.style.display="";
+    const mean=Math.round(arr.reduce((s,x)=>s+x.score,0)/arr.length);
+    avg.style.display=""; avg.innerHTML="平均モヤモヤ度 <b>"+mean+"点</b>（直近"+arr.length+"件）";
+    rows.innerHTML="";
+    arr.slice().reverse().forEach(x=>{
+      const r=document.createElement("div"); r.className="row";
+      r.innerHTML='<div class="n">'+x.score+'</div>'+
+        '<div class="bar"><span style="width:'+x.score+'%;background:'+colorFor(x.cls)+'"></span></div>'+
+        '<div class="when">'+ago(x.at)+'</div>';
+      rows.appendChild(r);
+    });
+  }
+
+  renderQ();
+  renderHist();
+})();
+</script>
+</body>
+</html>
